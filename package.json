@@ -4,9 +4,12 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:content": "turbo run dev --filter=@hackaton-2k26/content",
+    "dev:app": "turbo run dev --filter=@hackaton-2k26/application",
+    "dev:build": "turbo run dev:build",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "type-checks": "turbo run type-checks"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

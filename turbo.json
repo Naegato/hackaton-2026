@@ -10,10 +10,24 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
-    "check-types": {
-      "dependsOn": ["^check-types"]
+    "type-checks": {
+      "dependsOn": ["^type-checks"]
+    },
+    "@hackaton-2k26/docker#up": {
+      "cache": false
+    },
+    "@hackaton-2k26/docker#dev": {
+      "dependsOn": ["@hackaton-2k26/docker#up"],
+      "cache": false,
+      "persistent": true
     },
     "dev": {
+      "dependsOn": ["@hackaton-2k26/docker#up"],
+      "cache": false,
+      "persistent": true
+    },
+    "dev:build": {
+      "dependsOn": ["@hackaton-2k26/docker#up"],
       "cache": false,
       "persistent": true
     }

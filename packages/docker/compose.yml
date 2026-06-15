@@ -1,0 +1,21 @@
+services:
+  db:
+    image: mongo:8.2
+    hostname: mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${DB_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DB_NAME}
+    ports:
+      - ${DB_PORT}:27017
+    volumes:
+      - db:/data/db
+      - configdb:/data/configdb
+  smtp:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+volumes:
+  db:
+  configdb:
