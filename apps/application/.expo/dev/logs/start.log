@@ -1,0 +1,9 @@
+{"_e":"root:init","_t":1781530401138,"format":"v0-jsonl","version":"56.1.16"}
+{"_e":"env:mode","_t":1781530401140,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1781530401147,"mode":"development","files":["../../../.env"],"env":{"EXPO_PUBLIC_API_URL":"https://fe33-86-208-59-247.ngrok-free.app/"}}
+{"_e":"devserver:start","_t":1781530401561,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../../../src/app","serverComponents":false,"serverActions":false,"serverRendering":true,"apiRoutes":false,"exporting":false}
+{"_e":"root:init","_t":1781530650855,"format":"v0-jsonl","version":"56.1.16"}
+{"_e":"env:mode","_t":1781530650856,"nodeEnv":"development","babelEnv":"development","mode":"development"}
+{"_e":"env:load","_t":1781530650861,"mode":"development","files":["../../../.env"],"env":{"EXPO_PUBLIC_API_URL":"https://9f09-86-208-59-247.ngrok-free.app/"}}
+{"_e":"devserver:start","_t":1781530651508,"mode":"development","web":true,"baseUrl":"","asyncRoutes":false,"routerRoot":"../../../src/app","serverComponents":false,"serverActions":false,"serverRendering":true,"apiRoutes":false,"exporting":false}
+{"_e":"metro:config","_t":1781530653227,"serverRoot":"../../../../..","projectRoot":"../../..","exporting":false,"flags":{"autolinkingModuleResolution":true,"serverActions":false,"serverComponents":false,"reactCompiler":true,"optimizeGraph":false,"treeshaking":false,"logbox":false}}
