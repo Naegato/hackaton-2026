@@ -22,6 +22,8 @@ help:
 	@echo "  ─────────────────────────────────────────────────────"
 	@echo "  make dev-content      Lance uniquement l'app content (Payload CMS)"
 	@echo "  make dev-app          Lance uniquement l'app mobile (Expo Go)"
+	@echo "  make seed             Crée les comptes de démo (nécessite la base démarrée)"
+	@echo "  make test             Lance les tests d'intégration backend (nécessite la base démarrée)"
 	@echo ""
 
 packages/docker/.env:
@@ -93,4 +95,10 @@ dev-content:
 dev-app:
 	bun turbo run dev --filter=@hackaton-2k26/application
 
-.PHONY: help requirement requirement-ngrok install up up-start up-ngrok up-start-ngrok down clean dev-content dev-app
+seed:
+	bun --filter=@hackaton-2k26/content seed
+
+test:
+	bun --filter=@hackaton-2k26/content test:int
+
+.PHONY: help requirement requirement-ngrok install up up-start up-ngrok up-start-ngrok down clean dev-content dev-app seed test
