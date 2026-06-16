@@ -1,3 +1,5 @@
+// @vitest-environment node
+// Test backend (Local API Payload) : pas besoin du DOM, on évite jsdom (incompatibilité ESM/CJS).
 import { getPayload, Payload } from 'payload'
 import config from '@/payload.config'
 
