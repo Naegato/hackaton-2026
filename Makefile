@@ -9,7 +9,7 @@ help:
 	@echo "  make install          Vérifie les dépendances (bun, docker) et installe les packages"
 	@echo "  make .env             Crée tous les fichiers .env depuis les .env.example"
 	@echo "  make down             Éteint le docker compose (MongoDB + MailHog)"
-	@echo "  make clean            Supprime node_modules, .next, dist, .expo"
+	@echo "  make clean            Supprime node_modules, .next, dist, .expo, .turbo, ios, android"
 	@echo ""
 	@echo "  Démarrage"
 	@echo "  ─────────────────────────────────────────────────────"
@@ -78,11 +78,14 @@ down:
 	cd packages/docker && docker compose down
 
 clean:
-	@echo "Cleaning up node_modules and build folders..."
+	@echo "Cleaning up node_modules and build/cache folders..."
 	find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
 	find . -name ".next" -type d -prune -exec rm -rf '{}' +
+	find . -name ".turbo" -type d -prune -exec rm -rf '{}' +
 	find . -name "dist" -type d -prune -exec rm -rf '{}' +
 	find . -name ".expo" -type d -prune -exec rm -rf '{}' +
+	find . -name "ios" -type d -prune -exec rm -rf '{}' +
+	find . -name "android" -type d -prune -exec rm -rf '{}' +
 
 dev-content:
 	bun turbo run dev --filter=@hackaton-2k26/content
