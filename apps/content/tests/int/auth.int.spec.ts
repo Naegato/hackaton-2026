@@ -89,7 +89,7 @@ describe('Auth', () => {
       })
 
       expect(result.token).toBeTruthy()
-      expect(result.user.email).toBe(userEmail)
+      expect(result.user?.email).toBe(userEmail)
     })
 
     it('échoue avec un mauvais mot de passe', async () => {
@@ -143,7 +143,7 @@ describe('Auth', () => {
         collection: 'users',
         data: { email: userEmail, password: 'NewPassword123!' },
       })
-      expect(relogin.user.email).toBe(userEmail)
+      expect(relogin.user?.email).toBe(userEmail)
     })
   })
 })

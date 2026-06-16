@@ -13,9 +13,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/context/auth-context';
+import { useLocale } from '@/context/locale-context';
 
 export default function ForgotPasswordScreen() {
   const { requestPasswordReset } = useAuth();
+  const { t } = useLocale();
   const router = useRouter();
 
   const RESEND_DELAY = 30; // secondes avant de pouvoir renvoyer
@@ -41,7 +43,7 @@ export default function ForgotPasswordScreen() {
   async function sendResetEmail() {
     setError(null);
     if (!email.trim()) {
-      setError('Renseigne ton email.');
+      setError(t('forgot.errEmail'));
       return;
     }
     setLoading(true);
@@ -50,7 +52,7 @@ export default function ForgotPasswordScreen() {
       setSent(true);
       setCooldown(RESEND_DELAY);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Demande impossible.');
+      setError(e instanceof Error ? e.message : t('forgot.errGeneric'));
     } finally {
       setLoading(false);
     }
@@ -62,20 +64,17 @@ export default function ForgotPasswordScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <ThemedText type="title">Mot de passe oublié</ThemedText>
+          <ThemedText type="title">{t('forgot.title')}</ThemedText>
 
           {sent ? (
             <>
-              <ThemedText style={styles.subtitle}>
-                Si un compte existe pour {email.trim()}, un email avec un lien de réinitialisation
-                vient d'être envoyé. Pense à vérifier tes spams.
-              </ThemedText>
+              <ThemedText style={styles.subtitle}>{t('forgot.sent')}</ThemedText>
               <Pressable
                 accessibilityRole="button"
                 onPress={() => router.replace('/reset-password')}
                 style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
                 <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                  J'ai reçu un code
+                  {t('forgot.haveCode')}
                 </ThemedText>
               </Pressable>
 
@@ -97,24 +96,22 @@ export default function ForgotPasswordScreen() {
                   <ActivityIndicator />
                 ) : (
                   <ThemedText type="link">
-                    {cooldown > 0 ? `Renvoyer l'email (${cooldown}s)` : "Renvoyer l'email"}
+                    {cooldown > 0 ? `${t('forgot.resend')} (${cooldown}s)` : t('forgot.resend')}
                   </ThemedText>
                 )}
               </Pressable>
 
               <ThemedView style={styles.footer}>
                 <Link href="/login" replace>
-                  <ThemedText type="link">Retour à la connexion</ThemedText>
+                  <ThemedText type="link">{t('common.backToLogin')}</ThemedText>
                 </Link>
               </ThemedView>
             </>
           ) : (
             <>
-              <ThemedText style={styles.subtitle}>
-                Saisis ton email : on t'envoie un lien pour choisir un nouveau mot de passe.
-              </ThemedText>
+              <ThemedText style={styles.subtitle}>{t('forgot.subtitle')}</ThemedText>
               <TextField
-                label="Email"
+                label={t('common.email')}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -145,14 +142,14 @@ export default function ForgotPasswordScreen() {
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                    Envoyer le lien
+                    {t('forgot.send')}
                   </ThemedText>
                 )}
               </Pressable>
 
               <ThemedView style={styles.footer}>
                 <Link href="/login" replace>
-                  <ThemedText type="link">Retour à la connexion</ThemedText>
+                  <ThemedText type="link">{t('common.backToLogin')}</ThemedText>
                 </Link>
               </ThemedView>
             </>

@@ -8,6 +8,8 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { pageGlobals } from './globals/Pages'
+import { defaultLocale, locales } from './locales'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -20,6 +22,22 @@ export default buildConfig({
     },
   },
   collections: [Users, Media],
+  globals: pageGlobals,
+  // Localization : le contenu marqué `localized` est stocké par langue.
+  // L'API renvoie la bonne version via ?locale=<code> ; fallback sur le français si traduction absente.
+  localization: {
+    locales: [...locales],
+    defaultLocale,
+    fallback: true,
+  },
+  // Endpoint public pour que le front liste les langues disponibles et propose le choix.
+  endpoints: [
+    {
+      path: '/locales',
+      method: 'get',
+      handler: () => Response.json({ locales, defaultLocale }),
+    },
+  ],
   editor: lexicalEditor(),
   // CORS : origines autorisées à appeler l'API.
   // Le mobile natif n'est pas soumis au CORS (pas d'origine) ; cette liste sert au web (Expo web :8081) et à l'admin (:3000).

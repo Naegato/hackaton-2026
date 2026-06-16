@@ -13,9 +13,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/context/auth-context';
+import { useLocale } from '@/context/locale-context';
 
 export default function ResetPasswordScreen() {
   const { resetPassword } = useAuth();
+  const { t } = useLocale();
   const router = useRouter();
   const params = useLocalSearchParams<{ token?: string }>();
 
@@ -29,15 +31,15 @@ export default function ResetPasswordScreen() {
   async function onSubmit() {
     setError(null);
     if (!token.trim()) {
-      setError('Le code de réinitialisation est manquant.');
+      setError(t('reset.errMissing'));
       return;
     }
     if (password.length < 8) {
-      setError('Le mot de passe doit faire au moins 8 caractères.');
+      setError(t('reset.errLen'));
       return;
     }
     if (password !== confirm) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError(t('reset.errMatch'));
       return;
     }
     setLoading(true);
@@ -46,7 +48,7 @@ export default function ResetPasswordScreen() {
       // resetPassword connecte directement → le guard bascule vers l'app
       router.replace('/');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Réinitialisation impossible. Le lien a peut-être expiré.');
+      setError(e instanceof Error ? e.message : t('reset.errGeneric'));
     } finally {
       setLoading(false);
     }
@@ -58,24 +60,22 @@ export default function ResetPasswordScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <ThemedText type="title">Nouveau mot de passe</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Choisis un nouveau mot de passe pour ton compte.
-          </ThemedText>
+          <ThemedText type="title">{t('reset.title')}</ThemedText>
+          <ThemedText style={styles.subtitle}>{t('reset.subtitle')}</ThemedText>
 
           {/* Champ token affiché seulement s'il n'a pas été fourni par le lien */}
           {!params.token ? (
             <TextField
-              label="Code de réinitialisation"
+              label={t('reset.codeLabel')}
               value={token}
               onChangeText={setToken}
               autoCapitalize="none"
-              placeholder="Colle le code reçu par email"
+              placeholder={t('reset.codePlaceholder')}
             />
           ) : null}
 
           <TextField
-            label="Mot de passe"
+            label={t('common.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -85,7 +85,7 @@ export default function ResetPasswordScreen() {
             textContentType="newPassword"
           />
           <TextField
-            label="Confirmer le mot de passe"
+            label={t('register.confirm')}
             value={confirm}
             onChangeText={setConfirm}
             secureTextEntry
@@ -112,14 +112,14 @@ export default function ResetPasswordScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                Réinitialiser
+                {t('reset.submit')}
               </ThemedText>
             )}
           </Pressable>
 
           <ThemedView style={styles.footer}>
             <Link href="/login" replace>
-              <ThemedText type="link">Retour à la connexion</ThemedText>
+              <ThemedText type="link">{t('common.backToLogin')}</ThemedText>
             </Link>
           </ThemedView>
         </ScrollView>
