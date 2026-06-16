@@ -13,9 +13,11 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/context/auth-context';
+import { useLocale } from '@/context/locale-context';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
+  const { t } = useLocale();
   const router = useRouter();
 
   const [firstName, setFirstName] = useState('');
@@ -29,15 +31,15 @@ export default function RegisterScreen() {
   async function onSubmit() {
     setError(null);
     if (!email.trim() || !password) {
-      setError('Email et mot de passe sont obligatoires.');
+      setError(t('register.errRequired'));
       return;
     }
     if (password.length < 8) {
-      setError('Le mot de passe doit faire au moins 8 caractères.');
+      setError(t('register.errLen'));
       return;
     }
     if (password !== confirm) {
-      setError('Les mots de passe ne correspondent pas.');
+      setError(t('register.errMatch'));
       return;
     }
     setLoading(true);
@@ -50,7 +52,7 @@ export default function RegisterScreen() {
       });
       router.replace('/');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Inscription impossible.');
+      setError(e instanceof Error ? e.message : t('register.errGeneric'));
     } finally {
       setLoading(false);
     }
@@ -62,13 +64,11 @@ export default function RegisterScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <ThemedText type="title">Créer un compte</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Gère tes abonnements et ceux de tes proches.
-          </ThemedText>
+          <ThemedText type="title">{t('register.title')}</ThemedText>
+          <ThemedText style={styles.subtitle}>{t('register.subtitle')}</ThemedText>
 
           <TextField
-            label="Prénom"
+            label={t('common.firstName')}
             value={firstName}
             onChangeText={setFirstName}
             autoComplete="given-name"
@@ -76,7 +76,7 @@ export default function RegisterScreen() {
             placeholder="Camille"
           />
           <TextField
-            label="Nom"
+            label={t('common.lastName')}
             value={lastName}
             onChangeText={setLastName}
             autoComplete="family-name"
@@ -84,7 +84,7 @@ export default function RegisterScreen() {
             placeholder="Martin"
           />
           <TextField
-            label="Email"
+            label={t('common.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -95,7 +95,7 @@ export default function RegisterScreen() {
             textContentType="emailAddress"
           />
           <TextField
-            label="Mot de passe"
+            label={t('common.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -105,7 +105,7 @@ export default function RegisterScreen() {
             textContentType="newPassword"
           />
           <TextField
-            label="Confirmer le mot de passe"
+            label={t('register.confirm')}
             value={confirm}
             onChangeText={setConfirm}
             secureTextEntry
@@ -132,15 +132,15 @@ export default function RegisterScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                Créer mon compte
+                {t('register.submit')}
               </ThemedText>
             )}
           </Pressable>
 
           <ThemedView style={styles.footer}>
-            <ThemedText>Déjà un compte ? </ThemedText>
+            <ThemedText>{t('register.haveAccount')} </ThemedText>
             <Link href="/login" replace>
-              <ThemedText type="link">Se connecter</ThemedText>
+              <ThemedText type="link">{t('register.signIn')}</ThemedText>
             </Link>
           </ThemedView>
         </ScrollView>

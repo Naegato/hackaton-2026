@@ -11,11 +11,14 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { LanguagePicker } from '@/components/language-picker';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/context/auth-context';
+import { useLocale } from '@/context/locale-context';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const { t } = useLocale();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -26,7 +29,7 @@ export default function LoginScreen() {
   async function onSubmit() {
     setError(null);
     if (!email.trim() || !password) {
-      setError('Renseigne ton email et ton mot de passe.');
+      setError(t('login.errFields'));
       return;
     }
     setLoading(true);
@@ -34,7 +37,7 @@ export default function LoginScreen() {
       await signIn(email.trim(), password);
       router.replace('/');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Connexion impossible.');
+      setError(e instanceof Error ? e.message : t('login.errGeneric'));
     } finally {
       setLoading(false);
     }
@@ -46,11 +49,15 @@ export default function LoginScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <ThemedText type="title">Connexion</ThemedText>
-          <ThemedText style={styles.subtitle}>Accède à tes abonnements de transport.</ThemedText>
+          <ThemedView style={styles.topBar}>
+            <LanguagePicker />
+          </ThemedView>
+
+          <ThemedText type="title">{t('login.title')}</ThemedText>
+          <ThemedText style={styles.subtitle}>{t('login.subtitle')}</ThemedText>
 
           <TextField
-            label="Email"
+            label={t('common.email')}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -61,7 +68,7 @@ export default function LoginScreen() {
             textContentType="emailAddress"
           />
           <TextField
-            label="Mot de passe"
+            label={t('common.password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -80,7 +87,7 @@ export default function LoginScreen() {
           ) : null}
 
           <Link href="/forgot-password" style={styles.forgot}>
-            <ThemedText type="link">Mot de passe oublié ?</ThemedText>
+            <ThemedText type="link">{t('login.forgot')}</ThemedText>
           </Link>
 
           <Pressable
@@ -92,15 +99,15 @@ export default function LoginScreen() {
               <ActivityIndicator color="#fff" />
             ) : (
               <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                Se connecter
+                {t('login.submit')}
               </ThemedText>
             )}
           </Pressable>
 
           <ThemedView style={styles.footer}>
-            <ThemedText>Pas encore de compte ? </ThemedText>
+            <ThemedText>{t('login.noAccount')} </ThemedText>
             <Link href="/register" replace>
-              <ThemedText type="link">Créer un compte</ThemedText>
+              <ThemedText type="link">{t('login.createAccount')}</ThemedText>
             </Link>
           </ThemedView>
         </ScrollView>
@@ -120,6 +127,7 @@ const styles = StyleSheet.create({
   subtitle: { marginBottom: 8, opacity: 0.7 },
   error: { color: '#d33' },
   forgot: { alignSelf: 'flex-end' },
+  topBar: { alignItems: 'flex-end', marginBottom: 8 },
   button: {
     backgroundColor: '#0a7ea4',
     borderRadius: 10,
