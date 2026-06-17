@@ -1,5 +1,7 @@
 import type { Endpoint } from 'payload'
 
+import { DEFAULT_ROLE } from '@/access'
+
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo'
@@ -149,7 +151,7 @@ export const googleOAuthCallback: Endpoint = {
               authProvider: 'google' as any,
               firstName: profile.given_name,
               lastName: profile.family_name,
-              roles: ['user'],
+              roles: [DEFAULT_ROLE],
               // Throwaway password — replaced every login by the temp-password bridge below
               password: crypto.randomUUID() + crypto.randomUUID(),
             },

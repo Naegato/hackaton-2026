@@ -10,13 +10,22 @@ import config from './payload.config.js'
  * Via le Local API, `overrideAccess` est `true` par défaut → on peut fixer les `roles`
  * (le contrôle d'accès qui réserve ce champ aux admins ne s'applique pas ici).
  */
+import type { Role } from '@/access'
+
 const seedUsers: {
   email: string
   password: string
   firstName?: string
   lastName?: string
-  roles: ('admin' | 'user')[]
+  roles: Role[]
 }[] = [
+  {
+    email: 'developer@idf.test',
+    password: 'Dev1234!',
+    firstName: 'Dev',
+    lastName: 'IDF',
+    roles: ['developer'],
+  },
   {
     email: 'admin@idf.test',
     password: 'Admin1234!',
@@ -25,18 +34,32 @@ const seedUsers: {
     roles: ['admin'],
   },
   {
+    email: 'comutitres@idf.test',
+    password: 'Manager1234!',
+    firstName: 'Comutitres',
+    lastName: 'Manager',
+    roles: ['comutitres_manager'],
+  },
+  {
     email: 'camille@idf.test',
     password: 'User1234!',
     firstName: 'Camille',
     lastName: 'Martin',
-    roles: ['user'],
+    roles: ['payer'],
   },
   {
     email: 'sofiane@idf.test',
     password: 'User1234!',
     firstName: 'Sofiane',
     lastName: 'Benali',
-    roles: ['user'],
+    roles: ['cardholder'],
+  },
+  {
+    email: 'nouveau@idf.test',
+    password: 'User1234!',
+    firstName: 'Nouveau',
+    lastName: 'Compte',
+    roles: ['unsubscribed'],
   },
 ]
 

@@ -28,7 +28,7 @@ describe('Auth', () => {
   })
 
   describe('Inscription', () => {
-    it('crée un compte avec le rôle "user" par défaut', async () => {
+    it('crée un compte avec le rôle "unsubscribed" par défaut', async () => {
       const user = await payload.create({
         collection: 'users',
         data: {
@@ -40,7 +40,7 @@ describe('Auth', () => {
       })
 
       expect(user.id).toBeDefined()
-      expect(user.roles).toEqual(['user'])
+      expect(user.roles).toEqual(['unsubscribed'])
     })
 
     it("empêche un inscrit public de s'auto-attribuer le rôle admin", async () => {
@@ -56,7 +56,7 @@ describe('Auth', () => {
       })
 
       // Le rôle admin demandé est ignoré, on retombe sur la valeur par défaut
-      expect(user.roles).toEqual(['user'])
+      expect(user.roles).toEqual(['unsubscribed'])
     })
 
     it('refuse deux comptes avec le même email', async () => {
