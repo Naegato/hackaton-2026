@@ -1,0 +1,21 @@
+.git
+.github
+*.md
+.env
+.env.*
+!.env.example
+
+# Build artefacts
+**/.next
+**/dist
+**/.turbo
+
+# Dev/test only
+**/node_modules/.cache
+apps/application
+scripts
+
+# OS / editor noise
+**/.DS_Store
+**/.vscode
+**/.idea
