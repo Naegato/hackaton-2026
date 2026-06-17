@@ -4,6 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { LanguagePicker } from '@/components/language-picker';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
 
@@ -45,14 +47,11 @@ export default function ProfileScreen() {
         <LanguagePicker />
       </View>
 
-      <Pressable
-        accessibilityRole="button"
+      <Button
+        label={t('profile.signOut')}
         onPress={signOut}
-        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-        <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-          {t('profile.signOut')}
-        </ThemedText>
-      </Pressable>
+        style={styles.signOut}
+      />
     </ThemedView>
   );
 }
@@ -72,19 +71,14 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
+  buttonPressed: { opacity: 0.6 },
   languageRow: {
     marginTop: 8,
     gap: 8,
   },
-  button: {
+  signOut: {
     marginTop: 24,
-    backgroundColor: '#d33',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    minHeight: 48,
-    justifyContent: 'center',
+    width: '100%',
+    backgroundColor: Colors.danger,
   },
-  buttonPressed: { opacity: 0.7 },
-  buttonText: { fontWeight: '600', fontSize: 16 },
 });

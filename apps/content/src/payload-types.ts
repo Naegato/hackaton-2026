@@ -228,6 +228,10 @@ export interface Plan {
     [k: string]: unknown;
   } | null;
   /**
+   * Illustration de l’offre (affichée en bandeau au-dessus de la carte)
+   */
+  image?: (string | null) | Media;
+  /**
    * Tarif en euros pour la période. Pour Liberté+ : prix au trajet. Pour les offres sur dossier (TST/Améthyste) : 0 + meansTested.
    */
   price: number;
@@ -487,6 +491,7 @@ export interface PlansSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
   description?: T;
+  image?: T;
   price?: T;
   period?: T;
   zones?: T;
