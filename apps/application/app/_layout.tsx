@@ -39,6 +39,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         <Stack.Screen name="preferences" options={{ presentation: 'modal', title: 'Préférences' }} />
+        <Stack.Screen name="test-photo" options={{ presentation: 'modal', title: 'Test photo' }} />
       </Stack.Protected>
 
       {/* Connecté mais 1ʳᵉ fois → questionnaire */}
