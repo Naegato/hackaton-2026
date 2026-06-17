@@ -1,23 +1,24 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
+  View,
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { LanguagePicker } from '@/components/language-picker';
 import { TextField } from '@/components/ui/text-field';
+import { Button } from '@/components/ui/Button';
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
 
 export default function LoginScreen() {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const { t } = useLocale();
   const router = useRouter();
 
@@ -25,6 +26,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function onSubmit() {
     setError(null);
@@ -40,6 +42,19 @@ export default function LoginScreen() {
       setError(e instanceof Error ? e.message : t('login.errGeneric'));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onGoogleSignIn() {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      router.replace('/');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('login.errGoogle'));
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -90,19 +105,29 @@ export default function LoginScreen() {
             <ThemedText type="link">{t('login.forgot')}</ThemedText>
           </Link>
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={loading}
+          <Button
+            label={t('login.submit')}
             onPress={onSubmit}
-            style={({ pressed }) => [styles.button, (pressed || loading) && styles.buttonPressed]}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                {t('login.submit')}
-              </ThemedText>
-            )}
-          </Pressable>
+            variant="primary"
+            size="lg"
+            loading={loading}
+            disabled={googleLoading}
+          />
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <ThemedText style={styles.dividerText}>{t('login.orDivider')}</ThemedText>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Button
+            label={t('login.googleSignIn')}
+            onPress={onGoogleSignIn}
+            variant="outline"
+            size="lg"
+            loading={googleLoading}
+            disabled={loading}
+          />
 
           <ThemedView style={styles.footer}>
             <ThemedText>{t('login.noAccount')} </ThemedText>
@@ -124,20 +149,25 @@ const styles = StyleSheet.create({
     gap: 16,
     padding: 24,
   },
+  topBar: { alignItems: 'flex-end', marginBottom: 8 },
   subtitle: { marginBottom: 8, opacity: 0.7 },
   error: { color: '#d33' },
   forgot: { alignSelf: 'flex-end' },
-  topBar: { alignItems: 'flex-end', marginBottom: 8 },
-  button: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 10,
-    paddingVertical: 14,
+  divider: {
+    flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 48,
-    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 4,
   },
-  buttonPressed: { opacity: 0.7 },
-  buttonText: { fontWeight: '600', fontSize: 16 },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    opacity: 0.5,
+    fontSize: 13,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',

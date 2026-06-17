@@ -39,6 +39,9 @@ const fr: Dictionary = {
   'login.createAccount': 'Créer un compte',
   'login.errFields': 'Renseigne ton email et ton mot de passe.',
   'login.errGeneric': 'Connexion impossible.',
+  'login.orDivider': 'ou',
+  'login.googleSignIn': 'Continuer avec Google',
+  'login.errGoogle': 'Connexion Google impossible.',
 
   'register.title': 'Créer un compte',
   'register.subtitle': 'Gère tes abonnements et ceux de tes proches.',
@@ -50,6 +53,9 @@ const fr: Dictionary = {
   'register.errLen': 'Le mot de passe doit faire au moins 8 caractères.',
   'register.errMatch': 'Les mots de passe ne correspondent pas.',
   'register.errGeneric': 'Inscription impossible.',
+  'register.orDivider': 'ou',
+  'register.googleSignIn': "S'inscrire avec Google",
+  'register.errGoogle': 'Inscription Google impossible.',
 
   'forgot.title': 'Mot de passe oublié',
   'forgot.subtitle': "Saisis ton email : on t'envoie un lien pour choisir un nouveau mot de passe.",
@@ -97,6 +103,9 @@ const en: Dictionary = {
   'login.createAccount': 'Create an account',
   'login.errFields': 'Enter your email and password.',
   'login.errGeneric': 'Unable to sign in.',
+  'login.orDivider': 'or',
+  'login.googleSignIn': 'Continue with Google',
+  'login.errGoogle': 'Google sign-in failed.',
 
   'register.title': 'Create an account',
   'register.subtitle': 'Manage your subscriptions and those of your relatives.',
@@ -108,6 +117,9 @@ const en: Dictionary = {
   'register.errLen': 'Password must be at least 8 characters.',
   'register.errMatch': 'Passwords do not match.',
   'register.errGeneric': 'Unable to register.',
+  'register.orDivider': 'or',
+  'register.googleSignIn': 'Sign up with Google',
+  'register.errGoogle': 'Google sign-up failed.',
 
   'forgot.title': 'Forgot password',
   'forgot.subtitle': "Enter your email: we'll send you a link to choose a new password.",
@@ -155,6 +167,9 @@ const es: Dictionary = {
   'login.createAccount': 'Crear una cuenta',
   'login.errFields': 'Introduce tu correo y contraseña.',
   'login.errGeneric': 'No se pudo iniciar sesión.',
+  'login.orDivider': 'o',
+  'login.googleSignIn': 'Continuar con Google',
+  'login.errGoogle': 'Error al iniciar sesión con Google.',
 
   'register.title': 'Crear una cuenta',
   'register.subtitle': 'Gestiona tus abonos y los de tus allegados.',
@@ -166,6 +181,9 @@ const es: Dictionary = {
   'register.errLen': 'La contraseña debe tener al menos 8 caracteres.',
   'register.errMatch': 'Las contraseñas no coinciden.',
   'register.errGeneric': 'No se pudo registrar.',
+  'register.orDivider': 'o',
+  'register.googleSignIn': 'Registrarse con Google',
+  'register.errGoogle': 'Error al registrarse con Google.',
 
   'forgot.title': 'Contraseña olvidada',
   'forgot.subtitle': 'Introduce tu correo: te enviaremos un enlace para elegir una nueva contraseña.',
@@ -213,6 +231,9 @@ const zh: Dictionary = {
   'login.createAccount': '创建账户',
   'login.errFields': '请输入您的邮箱和密码。',
   'login.errGeneric': '无法登录。',
+  'login.orDivider': '或',
+  'login.googleSignIn': '使用 Google 登录',
+  'login.errGoogle': 'Google 登录失败。',
 
   'register.title': '创建账户',
   'register.subtitle': '管理您及亲友的订阅。',
@@ -224,6 +245,9 @@ const zh: Dictionary = {
   'register.errLen': '密码至少需要 8 个字符。',
   'register.errMatch': '两次输入的密码不一致。',
   'register.errGeneric': '注册失败。',
+  'register.orDivider': '或',
+  'register.googleSignIn': '使用 Google 注册',
+  'register.errGoogle': 'Google 注册失败。',
 
   'forgot.title': '忘记密码',
   'forgot.subtitle': '请输入您的邮箱：我们会发送一个链接以设置新密码。',

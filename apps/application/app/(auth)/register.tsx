@@ -1,22 +1,23 @@
 import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
+  View,
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TextField } from '@/components/ui/text-field';
+import { Button } from '@/components/ui/Button';
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
 
 export default function RegisterScreen() {
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const { t } = useLocale();
   const router = useRouter();
 
@@ -27,6 +28,7 @@ export default function RegisterScreen() {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   async function onSubmit() {
     setError(null);
@@ -58,6 +60,19 @@ export default function RegisterScreen() {
     }
   }
 
+  async function onGoogleSignIn() {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      router.replace('/');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t('register.errGoogle'));
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
   return (
     <ThemedView style={styles.flex}>
       <KeyboardAvoidingView
@@ -66,6 +81,21 @@ export default function RegisterScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <ThemedText type="title">{t('register.title')}</ThemedText>
           <ThemedText style={styles.subtitle}>{t('register.subtitle')}</ThemedText>
+
+          <Button
+            label={t('register.googleSignIn')}
+            onPress={onGoogleSignIn}
+            variant="outline"
+            size="lg"
+            loading={googleLoading}
+            disabled={loading}
+          />
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <ThemedText style={styles.dividerText}>{t('register.orDivider')}</ThemedText>
+            <View style={styles.dividerLine} />
+          </View>
 
           <TextField
             label={t('common.firstName')}
@@ -123,19 +153,14 @@ export default function RegisterScreen() {
             </ThemedText>
           ) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={loading}
+          <Button
+            label={t('register.submit')}
             onPress={onSubmit}
-            style={({ pressed }) => [styles.button, (pressed || loading) && styles.buttonPressed]}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                {t('register.submit')}
-              </ThemedText>
-            )}
-          </Pressable>
+            variant="primary"
+            size="lg"
+            loading={loading}
+            disabled={googleLoading}
+          />
 
           <ThemedView style={styles.footer}>
             <ThemedText>{t('register.haveAccount')} </ThemedText>
@@ -159,16 +184,21 @@ const styles = StyleSheet.create({
   },
   subtitle: { marginBottom: 8, opacity: 0.7 },
   error: { color: '#d33' },
-  button: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 10,
-    paddingVertical: 14,
+  divider: {
+    flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 48,
-    justifyContent: 'center',
+    gap: 12,
+    marginVertical: 4,
   },
-  buttonPressed: { opacity: 0.7 },
-  buttonText: { fontWeight: '600', fontSize: 16 },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    opacity: 0.5,
+    fontSize: 13,
+  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
