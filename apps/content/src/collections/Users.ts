@@ -1,11 +1,12 @@
-import type { CollectionConfig, FieldAccess } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { ownedBy } from '../access/roles'
-
-const isAdmin: FieldAccess = ({ req }) => {
-  const roles = (req.user as { roles?: string[] | null } | null)?.roles
-  return roles?.includes('admin') ?? false
-}
+import {
+  canAccessAdminPanel,
+  DEFAULT_ROLE,
+  isAdminOrSelf,
+  isSuperFieldLevel,
+  ROLES,
+} from '@/access'
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -46,9 +47,10 @@ export const Users: CollectionConfig = {
   access: {
     // Inscription publique : tout le monde peut créer un compte
     create: () => true,
-    // Un utilisateur ne lit/modifie que SON propre compte (préférences incluses) ; admin = tout
-    read: ownedBy('id'),
-    update: ownedBy('id'),
+    read: isAdminOrSelf,
+    update: isAdminOrSelf,
+    delete: isAdminOrSelf,
+    admin: canAccessAdminPanel,
   },
   fields: [
     // email + mot de passe ajoutés automatiquement par `auth`
@@ -86,17 +88,12 @@ export const Users: CollectionConfig = {
       name: 'roles',
       type: 'select',
       hasMany: true,
-      defaultValue: ['user'],
-      options: [
-        { label: 'Utilisateur', value: 'user' },
-        { label: 'Administrateur', value: 'admin' },
-      ],
+      defaultValue: [DEFAULT_ROLE],
+      options: [...ROLES],
       saveToJWT: true,
-      // Empêche l'escalade de privilèges : seul un admin peut attribuer/modifier les rôles.
-      // À l'inscription publique, le rôle reste donc `user` (defaultValue).
       access: {
-        create: isAdmin,
-        update: isAdmin,
+        create: isSuperFieldLevel,
+        update: isSuperFieldLevel,
       },
     },
     // A-t-il rempli le questionnaire d'onboarding ? Pilote l'affichage du formulaire à la 1ʳᵉ connexion.

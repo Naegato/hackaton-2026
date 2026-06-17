@@ -1,5 +1,7 @@
 import type { GlobalConfig } from 'payload'
 
+import { anyone, isStaff } from '@/access'
+
 /**
  * Fabrique un "global" représentant une page de contenu unique, traduisible.
  * - `title` et `content` sont `localized` → une valeur par langue (fr/en/es/zh).
@@ -10,7 +12,8 @@ const createPageGlobal = (slug: string, label: string): GlobalConfig => ({
   label,
   access: {
     // Contenu public : accessible sans authentification
-    read: () => true,
+    read: anyone,
+    update: isStaff,
   },
   admin: {
     group: 'Pages',

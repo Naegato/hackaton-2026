@@ -152,7 +152,7 @@ export interface User {
   authProvider?: ('email' | 'google' | 'apple') | null;
   firstName?: string | null;
   lastName?: string | null;
-  roles?: ('user' | 'admin')[] | null;
+  roles?: ('developer' | 'admin' | 'comutitres_manager' | 'payer' | 'cardholder' | 'unsubscribed')[] | null;
   onboardingCompleted?: boolean | null;
   preferences?: {
     birthdate?: string | null;
