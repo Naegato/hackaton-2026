@@ -81,8 +81,9 @@ const fr: Dictionary = {
   'profile.signOut': 'Se déconnecter',
 
   'nav.home': 'Accueil',
-  'nav.explore': 'Explorer',
+  'nav.explore': 'Catalogue',
   'nav.profile': 'Profil',
+  'explore.title': 'Tous les abonnements',
 
   'profile.preferences': 'Mes préférences',
 
@@ -216,8 +217,9 @@ const en: Dictionary = {
   'profile.signOut': 'Sign out',
 
   'nav.home': 'Home',
-  'nav.explore': 'Explore',
+  'nav.explore': 'Catalog',
   'nav.profile': 'Profile',
+  'explore.title': 'All passes',
 
   'profile.preferences': 'My preferences',
 
@@ -351,8 +353,9 @@ const es: Dictionary = {
   'profile.signOut': 'Cerrar sesión',
 
   'nav.home': 'Inicio',
-  'nav.explore': 'Explorar',
+  'nav.explore': 'Catálogo',
   'nav.profile': 'Perfil',
+  'explore.title': 'Todos los abonos',
 
   'profile.preferences': 'Mis preferencias',
 
@@ -486,8 +489,9 @@ const zh: Dictionary = {
   'profile.signOut': '退出登录',
 
   'nav.home': '首页',
-  'nav.explore': '探索',
+  'nav.explore': '目录',
   'nav.profile': '个人资料',
+  'explore.title': '所有月票',
 
   'profile.preferences': '我的偏好',
 
