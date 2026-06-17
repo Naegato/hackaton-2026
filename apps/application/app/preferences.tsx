@@ -30,7 +30,12 @@ export default function PreferencesScreen() {
         questions={buildPreferenceQuestions(t)}
         initialAnswers={preferencesToAnswers(user?.preferences)}
         onSubmit={onSubmit}
-        labels={{ next: t('onboarding.next'), back: t('onboarding.back'), finish: t('onboarding.finish') }}
+        labels={{
+          next: t('onboarding.next'),
+          back: t('onboarding.back'),
+          finish: t('onboarding.finish'),
+          review: t('onboarding.reviewTitle'),
+        }}
       />
     </ThemedView>
   );

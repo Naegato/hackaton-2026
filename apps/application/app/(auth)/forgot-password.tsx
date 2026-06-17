@@ -11,6 +11,7 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
@@ -69,14 +70,7 @@ export default function ForgotPasswordScreen() {
           {sent ? (
             <>
               <ThemedText style={styles.subtitle}>{t('forgot.sent')}</ThemedText>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.replace('/reset-password')}
-                style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}>
-                <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                  {t('forgot.haveCode')}
-                </ThemedText>
-              </Pressable>
+              <Button label={t('forgot.haveCode')} onPress={() => router.replace('/reset-password')} />
 
               {error ? (
                 <ThemedText style={styles.error} accessibilityLiveRegion="polite">
@@ -130,22 +124,7 @@ export default function ForgotPasswordScreen() {
                 </ThemedText>
               ) : null}
 
-              <Pressable
-                accessibilityRole="button"
-                disabled={loading}
-                onPress={sendResetEmail}
-                style={({ pressed }) => [
-                  styles.button,
-                  (pressed || loading) && styles.buttonPressed,
-                ]}>
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                    {t('forgot.send')}
-                  </ThemedText>
-                )}
-              </Pressable>
+              <Button label={t('forgot.send')} onPress={sendResetEmail} loading={loading} />
 
               <ThemedView style={styles.footer}>
                 <Link href="/login" replace>
@@ -170,16 +149,7 @@ const styles = StyleSheet.create({
   },
   subtitle: { marginBottom: 8, opacity: 0.7 },
   error: { color: '#d33' },
-  button: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    minHeight: 48,
-    justifyContent: 'center',
-  },
   buttonPressed: { opacity: 0.5 },
-  buttonText: { fontWeight: '600', fontSize: 16 },
   secondaryButton: {
     paddingVertical: 12,
     alignItems: 'center',

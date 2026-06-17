@@ -5,8 +5,11 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+import { Colors as IDF } from './Colors';
+
+// Accent aligné sur le design system IDF Mobilités (bleu CTA)
+const tintColorLight = IDF.primary;
+const tintColorDark = IDF.primaryLight;
 
 export const Colors = {
   light: {

@@ -1,16 +1,10 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/text-field';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
@@ -103,19 +97,7 @@ export default function ResetPasswordScreen() {
             </ThemedText>
           ) : null}
 
-          <Pressable
-            accessibilityRole="button"
-            disabled={loading}
-            onPress={onSubmit}
-            style={({ pressed }) => [styles.button, (pressed || loading) && styles.buttonPressed]}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <ThemedText style={styles.buttonText} lightColor="#fff" darkColor="#fff">
-                {t('reset.submit')}
-              </ThemedText>
-            )}
-          </Pressable>
+          <Button label={t('reset.submit')} onPress={onSubmit} loading={loading} />
 
           <ThemedView style={styles.footer}>
             <Link href="/login" replace>
@@ -138,16 +120,6 @@ const styles = StyleSheet.create({
   },
   subtitle: { marginBottom: 8, opacity: 0.7 },
   error: { color: '#d33' },
-  button: {
-    backgroundColor: '#0a7ea4',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    minHeight: 48,
-    justifyContent: 'center',
-  },
-  buttonPressed: { opacity: 0.7 },
-  buttonText: { fontWeight: '600', fontSize: 16 },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
