@@ -7,6 +7,12 @@ import { getToken } from './token-storage';
 const RAW_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/';
 const BASE_URL = RAW_BASE.replace(/\/$/, ''); // retire un éventuel slash final
 
+export type Preferences = {
+  birthdate?: string | null;
+  status?: 'student' | 'active' | 'retired' | 'jobseeker' | 'other' | null;
+  usageDaysPerWeek?: number | null;
+  socialBeneficiary?: boolean | null;
+};
 export { BASE_URL };
 
 export type User = {
@@ -15,6 +21,20 @@ export type User = {
   firstName?: string | null;
   lastName?: string | null;
   roles?: string[] | null;
+  onboardingCompleted?: boolean | null;
+  preferences?: Preferences | null;
+};
+
+export type RecommendationResult = {
+  recommendedSlug: string | null;
+  plans: {
+    slug: string;
+    name: string;
+    price: number;
+    period: 'per-trip' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+    eligible: boolean;
+    monthlyEquivalent: number;
+  }[];
   authProvider?: 'email' | 'google' | 'apple' | null;
 };
 
@@ -94,6 +114,32 @@ export function resetPassword(token: string, password: string): Promise<LoginRes
 /** Récupère l'utilisateur courant à partir du token stocké. */
 export function me(): Promise<MeResponse> {
   return request<MeResponse>('/api/users/me', { method: 'GET' }, true);
+}
+
+/** Met à jour le compte courant (préférences, onboardingCompleted…). */
+export function updateUser(
+  id: string,
+  data: { preferences?: Preferences; onboardingCompleted?: boolean },
+): Promise<{ doc: User }> {
+  return request<{ doc: User }>(`/api/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }, true);
+}
+
+/** Recommandation d'abonnement selon un profil (ou, si non fourni, les préférences du compte). */
+export function getRecommendation(params: {
+  age?: number;
+  status?: string;
+  usageDaysPerWeek?: number;
+  socialBeneficiary?: boolean;
+}): Promise<RecommendationResult> {
+  const qs = new URLSearchParams();
+  if (params.age != null) qs.set('age', String(params.age));
+  if (params.status) qs.set('status', params.status);
+  if (params.usageDaysPerWeek != null) qs.set('usageDaysPerWeek', String(params.usageDaysPerWeek));
+  if (params.socialBeneficiary != null) qs.set('socialBeneficiary', String(params.socialBeneficiary));
+  return request<RecommendationResult>(`/api/plans/recommend?${qs.toString()}`, { method: 'GET' }, true);
 }
 
 /** Invalide la session côté serveur (le token reste valide jusqu'à expiration, mais on l'efface côté client). */
