@@ -125,7 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       requestPasswordReset,
       resetPassword,
     }),
-    () => ({ user, initializing, signIn, signUp, signInWithGoogle, signOut, requestPasswordReset, resetPassword }),
     [user, initializing],
   );
 
