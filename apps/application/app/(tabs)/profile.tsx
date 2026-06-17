@@ -33,6 +33,13 @@ export default function ProfileScreen() {
         <ThemedText type="link">{t('profile.preferences')}</ThemedText>
       </Pressable>
 
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/test-photo')}
+        style={({ pressed }) => [styles.secondary, pressed && styles.buttonPressed]}>
+        <ThemedText type="link">Test vérification photo</ThemedText>
+      </Pressable>
+
       <View style={styles.languageRow}>
         <ThemedText type="defaultSemiBold">{t('common.language')}</ThemedText>
         <LanguagePicker />

@@ -23,5 +23,9 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@mistralai/mistralai": "^2.2.6",
+    "expo-image-picker": "^56.0.18"
+  }
 }

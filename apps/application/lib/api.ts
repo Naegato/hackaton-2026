@@ -146,3 +146,17 @@ export function getRecommendation(params: {
 export function logout(): Promise<unknown> {
   return request('/api/users/logout', { method: 'POST' }, true);
 }
+
+export type VerifyPhotoResponse = { isHuman: boolean; message: string };
+
+/** Vérifie via Claude Vision que la photo soumise pour l'abonnement contient un visage humain. */
+export function verifyPhoto(
+  imageBase64: string,
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif',
+): Promise<VerifyPhotoResponse> {
+  return request<VerifyPhotoResponse>(
+    '/api/verify-photo',
+    { method: 'POST', body: JSON.stringify({ imageBase64, mediaType }) },
+    true,
+  );
+}
