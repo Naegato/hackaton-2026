@@ -53,6 +53,28 @@ export const Users: CollectionConfig = {
   fields: [
     // email + mot de passe ajoutés automatiquement par `auth`
     {
+      name: 'googleId',
+      type: 'text',
+      index: true,
+      admin: { hidden: true },
+      // Ne jamais exposer l'identifiant Google tiers dans les réponses REST
+      access: { read: () => false },
+    },
+    {
+      name: 'authProvider',
+      type: 'select',
+      label: 'Méthode de connexion',
+      options: [
+        { label: 'Email', value: 'email' },
+        { label: 'Google', value: 'google' },
+        { label: 'Apple', value: 'apple' },
+      ],
+      defaultValue: 'email',
+      admin: { readOnly: true },
+      // Le provider est fixé à la création, jamais modifiable par le client
+      access: { update: () => false },
+    },
+    {
       name: 'firstName',
       type: 'text',
     },

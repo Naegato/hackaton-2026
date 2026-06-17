@@ -1,8 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as WebBrowser from 'expo-web-browser';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
+
+// Nécessaire pour Expo Web : ferme le popup OAuth et renvoie le token au parent
+WebBrowser.maybeCompleteAuthSession();
 
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { LocaleProvider } from '@/context/locale-context';

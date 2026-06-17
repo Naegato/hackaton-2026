@@ -13,6 +13,7 @@ export type Preferences = {
   usageDaysPerWeek?: number | null;
   socialBeneficiary?: boolean | null;
 };
+export { BASE_URL };
 
 export type User = {
   id: string;
@@ -34,6 +35,7 @@ export type RecommendationResult = {
     eligible: boolean;
     monthlyEquivalent: number;
   }[];
+  authProvider?: 'email' | 'google' | 'apple' | null;
 };
 
 export class ApiError extends Error {

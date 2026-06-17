@@ -55,9 +55,11 @@ install: requirement
 	bun install
 
 up: .env install
+	@bash scripts/setup-local.sh
 	bun dev; $(MAKE) down
 
 up-start: .env install
+	@bash scripts/setup-local.sh
 	bun run dev:build; $(MAKE) down
 
 up-ngrok: .env requirement-ngrok install
