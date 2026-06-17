@@ -54,10 +54,21 @@ export const Plans: CollectionConfig = {
           collection: 'plans',
           where: { active: { equals: true } },
           limit: 100,
-          depth: 0,
+          depth: 1, // peuple `image` (media) pour récupérer son URL
         })
 
-        return Response.json({ profile, ...recommend(docs, profile) })
+        const result = recommend(docs, profile)
+        // Métadonnées par offre pour la fiche info (image, zones, éligibilité)
+        const metaBySlug = new Map(
+          docs.map((d) => {
+            const img = d.image
+            const url = img && typeof img === 'object' && 'url' in img ? (img.url ?? null) : null
+            return [d.slug, { image: url, zones: d.zones ?? null, eligibility: d.eligibility ?? null }]
+          }),
+        )
+        const plans = result.plans.map((p) => ({ ...p, ...metaBySlug.get(p.slug) }))
+
+        return Response.json({ profile, recommendedSlug: result.recommendedSlug, plans })
       },
     },
   ],
@@ -78,6 +89,12 @@ export const Plans: CollectionConfig = {
       name: 'description',
       type: 'richText',
       localized: true, // profite de l'i18n déjà en place
+    },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      admin: { description: 'Illustration de l’offre (affichée en bandeau au-dessus de la carte)' },
     },
     {
       name: 'price',

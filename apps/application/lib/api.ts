@@ -21,6 +21,7 @@ export type User = {
   firstName?: string | null;
   lastName?: string | null;
   roles?: string[] | null;
+  authProvider?: 'email' | 'google' | 'apple' | null;
   onboardingCompleted?: boolean | null;
   preferences?: Preferences | null;
 };
@@ -34,8 +35,16 @@ export type RecommendationResult = {
     period: 'per-trip' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
     eligible: boolean;
     monthlyEquivalent: number;
+    image?: string | null;
+    zones?: string | null;
+    eligibility?: {
+      minAge?: number | null;
+      maxAge?: number | null;
+      studentOnly?: boolean | null;
+      meansTested?: boolean | null;
+      requiresCMI?: boolean | null;
+    } | null;
   }[];
-  authProvider?: 'email' | 'google' | 'apple' | null;
 };
 
 export class ApiError extends Error {

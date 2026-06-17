@@ -37,7 +37,12 @@ export default function OnboardingScreen() {
         onSubmit={onSubmit}
         onSkip={onSkip}
         skipLabel={t('onboarding.skip')}
-        labels={{ next: t('onboarding.next'), back: t('onboarding.back'), finish: t('onboarding.finish') }}
+        labels={{
+          next: t('onboarding.next'),
+          back: t('onboarding.back'),
+          finish: t('onboarding.finish'),
+          review: t('onboarding.reviewTitle'),
+        }}
       />
     </ThemedView>
   );
