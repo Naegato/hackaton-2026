@@ -24,14 +24,26 @@ function RootNavigator() {
     );
   }
 
+  const authed = !!user;
+  const ready = authed && user?.onboardingCompleted === true;
+  const needsOnboarding = authed && user?.onboardingCompleted !== true;
+
   return (
     <Stack>
-      <Stack.Protected guard={!!user}>
+      {/* Connecté + onboarding fait → l'app */}
+      <Stack.Protected guard={ready}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="preferences" options={{ presentation: 'modal', title: 'Préférences' }} />
       </Stack.Protected>
 
-      <Stack.Protected guard={!user}>
+      {/* Connecté mais 1ʳᵉ fois → questionnaire */}
+      <Stack.Protected guard={needsOnboarding}>
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+      </Stack.Protected>
+
+      {/* Déconnecté → auth */}
+      <Stack.Protected guard={!authed}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>

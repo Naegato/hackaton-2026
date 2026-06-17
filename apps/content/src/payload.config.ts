@@ -8,6 +8,9 @@ import sharp from 'sharp'
 
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
+import { Plans } from './collections/Plans'
+import { Subscriptions } from './collections/Subscriptions'
+import { TransferRequests } from './collections/TransferRequests'
 import { pageGlobals } from './globals/Pages'
 import { defaultLocale, locales } from './locales'
 
@@ -21,7 +24,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media],
+  collections: [Users, Media, Plans, Subscriptions, TransferRequests],
   globals: pageGlobals,
   // Localization : le contenu marqué `localized` est stocké par langue.
   // L'API renvoie la bonne version via ?locale=<code> ; fallback sur le français si traduction absente.

@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { LanguagePicker } from '@/components/language-picker';
@@ -9,6 +10,7 @@ import { useLocale } from '@/context/locale-context';
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { t } = useLocale();
+  const router = useRouter();
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
 
@@ -23,6 +25,13 @@ export default function ProfileScreen() {
           {t('profile.role')} : {user.roles.join(', ')}
         </ThemedText>
       ) : null}
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/preferences')}
+        style={({ pressed }) => [styles.secondary, pressed && styles.buttonPressed]}>
+        <ThemedText type="link">{t('profile.preferences')}</ThemedText>
+      </Pressable>
 
       <View style={styles.languageRow}>
         <ThemedText type="defaultSemiBold">{t('common.language')}</ThemedText>
@@ -50,8 +59,14 @@ const styles = StyleSheet.create({
   },
   email: { opacity: 0.7 },
   roles: { opacity: 0.7, marginBottom: 16 },
+  secondary: {
+    marginTop: 24,
+    paddingVertical: 12,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
   languageRow: {
-    marginTop: 16,
+    marginTop: 8,
     gap: 8,
   },
   button: {

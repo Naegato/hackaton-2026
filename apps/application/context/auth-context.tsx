@@ -15,6 +15,8 @@ type AuthState = {
     lastName?: string;
   }) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Recharge l'utilisateur courant depuis l'API (après modif des préférences/onboarding). */
+  refreshUser: () => Promise<void>;
   /** Envoie l'email de réinitialisation. */
   requestPasswordReset: (email: string) => Promise<void>;
   /** Réinitialise le mot de passe via le token reçu par email et connecte l'utilisateur. */
@@ -63,6 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signIn(input.email, input.password);
   }
 
+  async function refreshUser() {
+    const { user } = await api.me();
+    setUser(user);
+  }
+
   async function requestPasswordReset(email: string) {
     await api.forgotPassword(email);
   }
@@ -84,7 +91,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const value = useMemo<AuthState>(
-    () => ({ user, initializing, signIn, signUp, signOut, requestPasswordReset, resetPassword }),
+    () => ({
+      user,
+      initializing,
+      signIn,
+      signUp,
+      signOut,
+      refreshUser,
+      requestPasswordReset,
+      resetPassword,
+    }),
     [user, initializing],
   );
 

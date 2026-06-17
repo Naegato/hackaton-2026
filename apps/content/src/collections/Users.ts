@@ -1,5 +1,7 @@
 import type { CollectionConfig, FieldAccess } from 'payload'
 
+import { ownedBy } from '../access/roles'
+
 const isAdmin: FieldAccess = ({ req }) => {
   const roles = (req.user as { roles?: string[] | null } | null)?.roles
   return roles?.includes('admin') ?? false
@@ -44,6 +46,9 @@ export const Users: CollectionConfig = {
   access: {
     // Inscription publique : tout le monde peut créer un compte
     create: () => true,
+    // Un utilisateur ne lit/modifie que SON propre compte (préférences incluses) ; admin = tout
+    read: ownedBy('id'),
+    update: ownedBy('id'),
   },
   fields: [
     // email + mot de passe ajoutés automatiquement par `auth`
@@ -71,6 +76,47 @@ export const Users: CollectionConfig = {
         create: isAdmin,
         update: isAdmin,
       },
+    },
+    // A-t-il rempli le questionnaire d'onboarding ? Pilote l'affichage du formulaire à la 1ʳᵉ connexion.
+    {
+      name: 'onboardingCompleted',
+      type: 'checkbox',
+      defaultValue: false,
+    },
+    // Préférences servant à l'éligibilité et à la recommandation d'abonnement. Modifiables par l'utilisateur.
+    {
+      name: 'preferences',
+      type: 'group',
+      fields: [
+        {
+          name: 'birthdate',
+          type: 'date',
+        },
+        {
+          name: 'status',
+          type: 'select',
+          options: [
+            { label: 'Élève / Étudiant', value: 'student' },
+            { label: 'Actif', value: 'active' },
+            { label: 'Retraité', value: 'retired' },
+            { label: "En recherche d'emploi", value: 'jobseeker' },
+            { label: 'Autre', value: 'other' },
+          ],
+        },
+        {
+          name: 'usageDaysPerWeek',
+          type: 'number',
+          min: 0,
+          max: 7,
+          admin: { description: 'Nombre de jours de trajet par semaine (déclaré)' },
+        },
+        {
+          name: 'socialBeneficiary',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: { description: 'Bénéficiaire d’un tarif social (RSA, AAH, minima sociaux…)' },
+        },
+      ],
     },
   ],
 }

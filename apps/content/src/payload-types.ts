@@ -69,6 +69,9 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    plans: Plan;
+    subscriptions: Subscription;
+    'transfer-requests': TransferRequest;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +81,9 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    plans: PlansSelect<false> | PlansSelect<true>;
+    subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
+    'transfer-requests': TransferRequestsSelect<false> | TransferRequestsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -145,6 +151,19 @@ export interface User {
   firstName?: string | null;
   lastName?: string | null;
   roles?: ('user' | 'admin')[] | null;
+  onboardingCompleted?: boolean | null;
+  preferences?: {
+    birthdate?: string | null;
+    status?: ('student' | 'active' | 'retired' | 'jobseeker' | 'other') | null;
+    /**
+     * Nombre de jours de trajet par semaine (déclaré)
+     */
+    usageDaysPerWeek?: number | null;
+    /**
+     * Bénéficiaire d’un tarif social (RSA, AAH, minima sociaux…)
+     */
+    socialBeneficiary?: boolean | null;
+  };
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -185,6 +204,141 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans".
+ */
+export interface Plan {
+  id: string;
+  name: string;
+  slug: string;
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Tarif en euros pour la période. Pour Liberté+ : prix au trajet. Pour les offres sur dossier (TST/Améthyste) : 0 + meansTested.
+   */
+  price: number;
+  period: 'per-trip' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+  /**
+   * Zones couvertes, ex. "1-5"
+   */
+  zones?: string | null;
+  /**
+   * Détermine qui a le droit de souscrire. Champs vides = aucune condition.
+   */
+  eligibility?: {
+    minAge?: number | null;
+    maxAge?: number | null;
+    /**
+     * Réservé aux élèves / étudiants
+     */
+    studentOnly?: boolean | null;
+    /**
+     * Soumis à conditions de ressources / dossier (TST, Améthyste)
+     */
+    meansTested?: boolean | null;
+    /**
+     * Nécessite une Carte Mobilité Inclusion (Améthyste)
+     */
+    requiresCMI?: boolean | null;
+  };
+  /**
+   * Sert à recommander l’offre la plus pertinente selon le profil/usage.
+   */
+  recommendedFor?: {
+    /**
+     * Âge typique min
+     */
+    minAge?: number | null;
+    /**
+     * Âge typique max
+     */
+    maxAge?: number | null;
+    usageDaysPerWeekMin?: number | null;
+    usageDaysPerWeekMax?: number | null;
+    /**
+     * Ex. "Actif temps plein", "Usage occasionnel", "Étudiant"
+     */
+    profileLabel?: string | null;
+  };
+  /**
+   * Offre proposée aux utilisateurs
+   */
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions".
+ */
+export interface Subscription {
+  id: string;
+  plan: string | Plan;
+  /**
+   * Compte qui gère actuellement cet abonnement (modifié via un transfert)
+   */
+  managedBy: string | User;
+  /**
+   * Prénom du titulaire réel (peut être un proche, ≠ titulaire du compte)
+   */
+  holderFirstName?: string | null;
+  holderLastName?: string | null;
+  /**
+   * N° de carte / support de l’abonnement
+   */
+  cardNumber?: string | null;
+  status?: ('active' | 'expired' | 'cancelled') | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  transferHistory?:
+    | {
+        fromUser?: (string | null) | User;
+        toUser?: (string | null) | User;
+        date?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transfer-requests".
+ */
+export interface TransferRequest {
+  id: string;
+  subscription: string | Subscription;
+  /**
+   * Email du compte destinataire du transfert
+   */
+  toEmail: string;
+  /**
+   * Émetteur (rempli automatiquement)
+   */
+  fromUser?: (string | null) | User;
+  /**
+   * Destinataire (résolu depuis l’email)
+   */
+  toUser?: (string | null) | User;
+  status?: ('pending' | 'accepted' | 'declined' | 'cancelled') | null;
+  respondedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -214,6 +368,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: string | Media;
+      } | null)
+    | ({
+        relationTo: 'plans';
+        value: string | Plan;
+      } | null)
+    | ({
+        relationTo: 'subscriptions';
+        value: string | Subscription;
+      } | null)
+    | ({
+        relationTo: 'transfer-requests';
+        value: string | TransferRequest;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -265,6 +431,15 @@ export interface UsersSelect<T extends boolean = true> {
   firstName?: T;
   lastName?: T;
   roles?: T;
+  onboardingCompleted?: T;
+  preferences?:
+    | T
+    | {
+        birthdate?: T;
+        status?: T;
+        usageDaysPerWeek?: T;
+        socialBeneficiary?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -299,6 +474,77 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plans_select".
+ */
+export interface PlansSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  price?: T;
+  period?: T;
+  zones?: T;
+  eligibility?:
+    | T
+    | {
+        minAge?: T;
+        maxAge?: T;
+        studentOnly?: T;
+        meansTested?: T;
+        requiresCMI?: T;
+      };
+  recommendedFor?:
+    | T
+    | {
+        minAge?: T;
+        maxAge?: T;
+        usageDaysPerWeekMin?: T;
+        usageDaysPerWeekMax?: T;
+        profileLabel?: T;
+      };
+  active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscriptions_select".
+ */
+export interface SubscriptionsSelect<T extends boolean = true> {
+  plan?: T;
+  managedBy?: T;
+  holderFirstName?: T;
+  holderLastName?: T;
+  cardNumber?: T;
+  status?: T;
+  startDate?: T;
+  endDate?: T;
+  transferHistory?:
+    | T
+    | {
+        fromUser?: T;
+        toUser?: T;
+        date?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transfer-requests_select".
+ */
+export interface TransferRequestsSelect<T extends boolean = true> {
+  subscription?: T;
+  toEmail?: T;
+  fromUser?: T;
+  toUser?: T;
+  status?: T;
+  respondedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

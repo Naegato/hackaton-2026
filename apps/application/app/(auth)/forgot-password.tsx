@@ -118,7 +118,7 @@ export default function ForgotPasswordScreen() {
                 autoComplete="email"
                 keyboardType="email-address"
                 inputMode="email"
-                placeholder="toi@exemple.fr"
+                placeholder="exemple@email.fr"
                 textContentType="emailAddress"
                 onSubmitEditing={sendResetEmail}
                 returnKeyType="send"
