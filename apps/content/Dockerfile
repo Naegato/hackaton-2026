@@ -7,8 +7,9 @@ WORKDIR /repo
 
 # Copy workspace manifests first for layer-cache efficiency
 COPY package.json bun.lock ./
-COPY apps/content/package.json ./apps/content/
-COPY packages/docker/package.json ./packages/docker/
+COPY apps/content/package.json     ./apps/content/
+COPY apps/application/package.json ./apps/application/
+COPY packages/docker/package.json  ./packages/docker/
 
 RUN bun install --frozen-lockfile
 

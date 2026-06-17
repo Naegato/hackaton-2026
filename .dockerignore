@@ -12,7 +12,19 @@
 
 # Dev/test only
 **/node_modules/.cache
-apps/application
+# Exclude mobile app source but keep package.json so bun workspace resolution
+# matches the lockfile (bun resolves apps/* glob from root package.json)
+apps/application/app
+apps/application/assets
+apps/application/components
+apps/application/constants
+apps/application/hooks
+apps/application/lib
+apps/application/node_modules
+apps/application/.expo
+apps/application/android
+apps/application/ios
+apps/application/dist
 scripts
 
 # OS / editor noise
