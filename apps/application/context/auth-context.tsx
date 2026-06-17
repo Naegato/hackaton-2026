@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 
 import * as api from '@/lib/api';
+import { BASE_URL } from '@/lib/api';
 import { deleteToken, setToken } from '@/lib/token-storage';
 
 type AuthState = {
@@ -14,6 +17,8 @@ type AuthState = {
     firstName?: string;
     lastName?: string;
   }) => Promise<void>;
+  /** Ouvre le navigateur système pour la connexion Google. Résout quand l'utilisateur est connecté. */
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   /** Envoie l'email de réinitialisation. */
   requestPasswordReset: (email: string) => Promise<void>;
@@ -73,6 +78,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(user);
   }
 
+  async function signInWithGoogle() {
+    // createURL('/') retourne le deep-link exact de l'appareil courant :
+    // - Expo Go physique : exp://192.168.x.x:8081/--/
+    // - Simulateur      : exp://localhost:8081/--/
+    // - Build natif     : application://
+    // On l'envoie au backend en query param pour que le callback redirige vers la bonne adresse.
+    const redirectUrl = Linking.createURL('/');
+    const authUrl = `${BASE_URL}/api/oauth/google?redirect=${encodeURIComponent(redirectUrl)}`;
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUrl);
+    if (result.type !== 'success') return;
+    const parsed = new URL(result.url);
+    const token = parsed.searchParams.get('token');
+    if (!token) throw new Error('Connexion Google échouée.');
+    await setToken(token);
+    const { user } = await api.me();
+    if (user) setUser(user);
+  }
+
   async function signOut() {
     try {
       await api.logout();
@@ -84,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const value = useMemo<AuthState>(
-    () => ({ user, initializing, signIn, signUp, signOut, requestPasswordReset, resetPassword }),
+    () => ({ user, initializing, signIn, signUp, signInWithGoogle, signOut, requestPasswordReset, resetPassword }),
     [user, initializing],
   );
 

@@ -7,12 +7,15 @@ import { getToken } from './token-storage';
 const RAW_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/';
 const BASE_URL = RAW_BASE.replace(/\/$/, ''); // retire un éventuel slash final
 
+export { BASE_URL };
+
 export type User = {
   id: string;
   email: string;
   firstName?: string | null;
   lastName?: string | null;
   roles?: string[] | null;
+  authProvider?: 'email' | 'google' | 'apple' | null;
 };
 
 export class ApiError extends Error {

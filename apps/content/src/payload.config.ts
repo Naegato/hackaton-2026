@@ -10,6 +10,7 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { pageGlobals } from './globals/Pages'
 import { defaultLocale, locales } from './locales'
+import { googleOAuthCallback, googleOAuthRedirect } from './endpoints/oauth-google'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -37,6 +38,8 @@ export default buildConfig({
       method: 'get',
       handler: () => Response.json({ locales, defaultLocale }),
     },
+    googleOAuthRedirect,
+    googleOAuthCallback,
   ],
   editor: lexicalEditor(),
   // CORS : origines autorisées à appeler l'API.
