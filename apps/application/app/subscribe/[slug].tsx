@@ -2,12 +2,13 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DocumentExampleButton } from '@/components/document-example-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
+import { TextField } from '@/components/ui/text-field';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
@@ -59,6 +60,10 @@ export default function SubscribeScreen() {
   const [serverDocs, setServerDocs] = useState<Record<string, SubscriptionDoc>>({});
   const [localAssets, setLocalAssets] = useState<Record<string, LocalAsset>>({});
   const [submitting, setSubmitting] = useState(false);
+  // Pour qui ? « moi » (nom du compte) ou « un proche » (nom saisi → apparaît dans « pour mes proches »)
+  const [forWhom, setForWhom] = useState<'me' | 'relative'>('me');
+  const [relFirst, setRelFirst] = useState('');
+  const [relLast, setRelLast] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -96,10 +101,12 @@ export default function SubscribeScreen() {
       // Crée l'abonnement au premier passage
       let subId = subscriptionId;
       if (!subId) {
+        const holderFirstName = forWhom === 'relative' ? relFirst.trim() : user?.firstName ?? undefined;
+        const holderLastName = forWhom === 'relative' ? relLast.trim() : user?.lastName ?? undefined;
         const { doc } = await createSubscription({
           plan: plan.id,
-          holderFirstName: user?.firstName ?? undefined,
-          holderLastName: user?.lastName ?? undefined,
+          holderFirstName,
+          holderLastName,
         });
         subId = doc.id;
         setSubscriptionId(subId);
@@ -141,7 +148,9 @@ export default function SubscribeScreen() {
   // Chaque type doit être fourni (déjà côté serveur ou choisi localement)
   const allProvided = types.every((ty) => serverDocs[ty] || localAssets[ty]);
   const hasNewUploads = Object.keys(localAssets).length > 0;
-  const canSubmit = subscriptionId ? hasNewUploads : allProvided;
+  // Pour un proche : nom + prénom requis (≥ 2 caractères)
+  const relativeOk = forWhom === 'me' || (relFirst.trim().length >= 2 && relLast.trim().length >= 2);
+  const canSubmit = subscriptionId ? hasNewUploads : allProvided && relativeOk;
 
   return (
     <ThemedView style={styles.container}>
@@ -149,6 +158,59 @@ export default function SubscribeScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="title">{plan.name}</ThemedText>
+
+        {/* Pour qui ? (choix disponible tant que l'abonnement n'est pas créé) */}
+        {!subscriptionId ? (
+          <View style={styles.forWhomBox}>
+            <ThemedText type="defaultSemiBold">{t('subscribe.forWhom')}</ThemedText>
+            <View style={styles.segment}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: forWhom === 'me' }}
+                onPress={() => setForWhom('me')}
+                style={[styles.segBtn, forWhom === 'me' && styles.segBtnOn]}>
+                <ThemedText
+                  lightColor={forWhom === 'me' ? '#fff' : Colors.primary}
+                  darkColor={forWhom === 'me' ? '#fff' : Colors.primary}
+                  style={styles.segText}>
+                  {t('subscribe.forMe')}
+                </ThemedText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: forWhom === 'relative' }}
+                onPress={() => setForWhom('relative')}
+                style={[styles.segBtn, forWhom === 'relative' && styles.segBtnOn]}>
+                <ThemedText
+                  lightColor={forWhom === 'relative' ? '#fff' : Colors.primary}
+                  darkColor={forWhom === 'relative' ? '#fff' : Colors.primary}
+                  style={styles.segText}>
+                  {t('subscribe.forRelative')}
+                </ThemedText>
+              </Pressable>
+            </View>
+            {forWhom === 'relative' ? (
+              <>
+                <TextField
+                  label={t('common.firstName')}
+                  value={relFirst}
+                  onChangeText={setRelFirst}
+                  autoCapitalize="words"
+                  placeholder={t('relative.q.firstNamePlaceholder')}
+                />
+                <TextField
+                  label={t('common.lastName')}
+                  value={relLast}
+                  onChangeText={setRelLast}
+                  autoCapitalize="words"
+                  placeholder={t('relative.q.lastNamePlaceholder')}
+                />
+                <ThemedText style={styles.note}>{t('subscribe.relativeHint')}</ThemedText>
+              </>
+            ) : null}
+          </View>
+        ) : null}
+
         <ThemedText style={styles.intro}>{t('subscribe.docsIntro')}</ThemedText>
 
         {types.map((type) => {
@@ -231,6 +293,17 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 20, gap: 14 },
   intro: { opacity: 0.7 },
+  forWhomBox: { gap: 10 },
+  segment: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  segBtn: { flex: 1, alignItems: 'center', paddingVertical: 10 },
+  segBtnOn: { backgroundColor: Colors.primary },
+  segText: { fontSize: 14, fontWeight: '600' },
   card: { borderWidth: 1, borderColor: Colors.border, borderRadius: 12, padding: 14, gap: 6 },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   docTitle: { flex: 1, fontSize: 16 },

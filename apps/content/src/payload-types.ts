@@ -380,6 +380,18 @@ export interface TransferRequest {
   toUser?: (string | null) | User;
   status?: ('pending' | 'accepted' | 'declined' | 'cancelled') | null;
   respondedAt?: string | null;
+  /**
+   * Nom de l’émetteur (affiché au destinataire)
+   */
+  fromName?: string | null;
+  /**
+   * Nom de l’offre transférée
+   */
+  planName?: string | null;
+  /**
+   * Titulaire de l’abonnement (proche)
+   */
+  holderName?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -620,6 +632,9 @@ export interface TransferRequestsSelect<T extends boolean = true> {
   toUser?: T;
   status?: T;
   respondedAt?: T;
+  fromName?: T;
+  planName?: T;
+  holderName?: T;
   updatedAt?: T;
   createdAt?: T;
 }

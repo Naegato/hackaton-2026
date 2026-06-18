@@ -73,6 +73,23 @@ export const TransferRequests: CollectionConfig = {
       type: 'date',
       admin: { readOnly: true },
     },
+    // Champs dénormalisés (renseignés par le hook à la création) pour l'affichage côté destinataire,
+    // qui n'a pas accès en lecture à l'abonnement ni au compte émetteur.
+    {
+      name: 'fromName',
+      type: 'text',
+      admin: { readOnly: true, description: 'Nom de l’émetteur (affiché au destinataire)' },
+    },
+    {
+      name: 'planName',
+      type: 'text',
+      admin: { readOnly: true, description: 'Nom de l’offre transférée' },
+    },
+    {
+      name: 'holderName',
+      type: 'text',
+      admin: { readOnly: true, description: 'Titulaire de l’abonnement (proche)' },
+    },
   ],
   hooks: {
     beforeChange: [
@@ -85,7 +102,7 @@ export const TransferRequests: CollectionConfig = {
           const subscription = await req.payload.findByID({
             collection: 'subscriptions',
             id: toId(data.subscription),
-            depth: 0,
+            depth: 1, // peuple `plan` pour dénormaliser son nom
             req,
           })
           const manager = toId(subscription.managedBy)
@@ -93,6 +110,18 @@ export const TransferRequests: CollectionConfig = {
             throw new APIError("Vous ne gérez pas cet abonnement.", 403)
           }
           data.fromUser = manager
+
+          // Dénormalisation (affichage côté destinataire, qui n'a pas accès à l'abonnement ni au compte émetteur).
+          // Valeurs imposées par le hook → un client ne peut pas les usurper.
+          const managerUser = await req.payload.findByID({ collection: 'users', id: manager, depth: 0, req })
+          data.fromName =
+            [managerUser.firstName, managerUser.lastName].filter(Boolean).join(' ').trim() || managerUser.email
+          const plan = subscription.plan as { name?: string } | null
+          data.planName = (plan && typeof plan === 'object' ? plan.name : null) ?? ''
+          data.holderName = [subscription.holderFirstName, subscription.holderLastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim()
 
           // 2. Résoudre le destinataire depuis l'email
           const email = String(data.toEmail ?? '').trim().toLowerCase()
@@ -148,6 +177,36 @@ export const TransferRequests: CollectionConfig = {
       },
     ],
     afterChange: [
+      async ({ doc, req, operation }) => {
+        // Notifie le destinataire par email à la création de la demande (best-effort : n'interrompt pas la création)
+        if (operation !== 'create') return doc
+        try {
+          const fromName = String(doc.fromName || 'Un utilisateur')
+          const planName = String(doc.planName || 'un abonnement')
+          const base = (process.env.APP_PUBLIC_URL || 'http://localhost:8081').replace(/\/$/, '')
+
+          await req.payload.sendEmail({
+            to: doc.toEmail,
+            subject: 'Un abonnement vous est transféré — IDF Mobilité',
+            html: `
+              <div style="font-family: sans-serif; line-height: 1.5;">
+                <h2>Proposition de transfert d'abonnement</h2>
+                <p><strong>${fromName}</strong> souhaite vous transférer l'abonnement <strong>${planName}</strong>.</p>
+                <p>Ouvrez l'application IDF Mobilité, rubrique « Mes abonnements », pour accepter ou refuser ce transfert.</p>
+                <p>
+                  <a href="${base}" style="display:inline-block;padding:12px 20px;background:#0a7ea4;color:#fff;border-radius:8px;text-decoration:none;">
+                    Ouvrir l'application
+                  </a>
+                </p>
+                <p style="color:#888;font-size:13px;">Si vous ne connaissez pas l'expéditeur, ignorez cet email : aucun transfert n'a lieu sans votre acceptation.</p>
+              </div>
+            `,
+          })
+        } catch (err) {
+          req.payload.logger.error(`Email de transfert non envoyé : ${(err as Error).message}`)
+        }
+        return doc
+      },
       async ({ doc, previousDoc, req, operation, context }) => {
         if (context.skipTransferSwap) return doc
 
