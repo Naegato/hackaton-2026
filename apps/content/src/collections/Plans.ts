@@ -66,6 +66,7 @@ export const Plans: CollectionConfig = {
             return [
               d.slug,
               {
+                id: d.id,
                 image: url,
                 zones: d.zones ?? null,
                 eligibility: d.eligibility ?? null,

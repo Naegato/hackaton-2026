@@ -36,6 +36,13 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
+          name="wallet"
+          options={{
+            title: t('nav.wallet'),
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="creditcard.fill" color={color} />,
+          }}
+        />
+        <Tabs.Screen
           name="profile"
           options={{
             title: t('nav.profile'),

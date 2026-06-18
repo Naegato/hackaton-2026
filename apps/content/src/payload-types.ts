@@ -71,6 +71,7 @@ export interface Config {
     media: Media;
     plans: Plan;
     subscriptions: Subscription;
+    'subscription-documents': SubscriptionDocument;
     'transfer-requests': TransferRequest;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -83,6 +84,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     plans: PlansSelect<false> | PlansSelect<true>;
     subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
+    'subscription-documents': SubscriptionDocumentsSelect<false> | SubscriptionDocumentsSelect<true>;
     'transfer-requests': TransferRequestsSelect<false> | TransferRequestsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -152,7 +154,7 @@ export interface User {
   authProvider?: ('email' | 'google' | 'apple') | null;
   firstName?: string | null;
   lastName?: string | null;
-  roles?: ('developer' | 'admin' | 'comutitres_manager' | 'payer' | 'cardholder' | 'unsubscribed')[] | null;
+  roles?: ('developer' | 'admin' | 'comutitres_manager' | 'payer' | 'cardholder' | 'unsubscribed' | 'user')[] | null;
   onboardingCompleted?: boolean | null;
   preferences?: {
     birthdate?: string | null;
@@ -305,7 +307,7 @@ export interface Subscription {
    * N° de carte / support de l’abonnement
    */
   cardNumber?: string | null;
-  status?: ('active' | 'expired' | 'cancelled') | null;
+  status?: ('pending' | 'active' | 'expired' | 'cancelled') | null;
   startDate?: string | null;
   endDate?: string | null;
   transferHistory?:
@@ -318,6 +320,32 @@ export interface Subscription {
     | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription-documents".
+ */
+export interface SubscriptionDocument {
+  id: string;
+  owner?: (string | null) | User;
+  subscription?: (string | null) | Subscription;
+  type?: ('id' | 'photo' | 'school' | 'income' | 'cmi') | null;
+  status?: ('pending' | 'validated' | 'refused') | null;
+  /**
+   * Motif affiché à l’usager en cas de refus
+   */
+  refusalReason?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -382,6 +410,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscriptions';
         value: string | Subscription;
+      } | null)
+    | ({
+        relationTo: 'subscription-documents';
+        value: string | SubscriptionDocument;
       } | null)
     | ({
         relationTo: 'transfer-requests';
@@ -540,6 +572,28 @@ export interface SubscriptionsSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscription-documents_select".
+ */
+export interface SubscriptionDocumentsSelect<T extends boolean = true> {
+  owner?: T;
+  subscription?: T;
+  type?: T;
+  status?: T;
+  refusalReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
