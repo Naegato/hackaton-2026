@@ -89,7 +89,9 @@ fi
 # We pre-install the correct versions for the running Debian release, then let
 # the bundled script run (it exits 0 even when some packages are not found).
 echo "==> Installing runner dependencies..."
-apt-get install -y --no-install-recommends libicu-dev libssl-dev 2>/dev/null || true
+# libicu-dev and libssl-dev are meta-packages that pull the correct versioned
+# library for the running Debian release (e.g. libicu76 + libssl3t64 on trixie).
+apt-get install -y --no-install-recommends libicu-dev libssl-dev
 "$RUNNER_DIR/bin/installdependencies.sh" || true
 
 # Configure runner
