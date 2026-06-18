@@ -15,6 +15,12 @@ import {
   View,
 } from 'react-native';
 import { usePathname } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
+import {
+  ExpoSpeechRecognitionModule,
+  useSpeechRecognitionEvent,
+} from 'expo-speech-recognition';
 
 import * as api from '@/lib/api';
 import { ApiError, type AssistantAction } from '@/lib/api';
@@ -78,9 +84,10 @@ type Message = {
 type Props = {
   visible: boolean;
   onClose: () => void;
+  fullScreen?: boolean;
 };
 
-export function AssistantSheet({ visible, onClose }: Props) {
+export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) {
   const { t, locale, setLocale } = useLocale();
   const { user, refreshUser } = useAuth();
   const pathname = usePathname();
@@ -91,9 +98,67 @@ export function AssistantSheet({ visible, onClose }: Props) {
   const [input,      setInput]      = useState('');
   const [loading,    setLoading]    = useState(false);
   const [kbHeight,   setKbHeight]   = useState(0);
+  const [listening,  setListening]  = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   // Action proposée par LÉIA, en attente de confirmation (par message « oui » ou bouton)
   const [pendingAction, setPendingAction] = useState<AssistantAction | null>(null);
   const scrollRef = useRef<ScrollView>(null);
+  const lastSpokenId = useRef<string | null>(null);
+
+  useSpeechRecognitionEvent('result', (event) => {
+    const text = event.results[0]?.transcript;
+    if (text) setInput(text);
+  });
+
+  useSpeechRecognitionEvent('end', () => setListening(false));
+
+  useSpeechRecognitionEvent('error', () => setListening(false));
+
+  async function toggleListening() {
+    if (listening) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!permission.granted) return;
+    setInput('');
+    setListening(true);
+    ExpoSpeechRecognitionModule.start({ lang: 'fr-FR', interimResults: true });
+  }
+
+  function speakMessage(msg: Message) {
+    if (speakingId === msg.id) {
+      Speech.stop();
+      setSpeakingId(null);
+      return;
+    }
+    Speech.stop();
+    setSpeakingId(msg.id);
+    Speech.speak(msg.text, {
+      language: 'fr-FR',
+      onDone: () => setSpeakingId(null),
+      onStopped: () => setSpeakingId(null),
+      onError: () => setSpeakingId(null),
+    });
+  }
+
+  useEffect(() => {
+    if (!visible) {
+      ExpoSpeechRecognitionModule.stop();
+      Speech.stop();
+      setListening(false);
+      setSpeakingId(null);
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!fullScreen) return;
+    const last = messages[messages.length - 1];
+    if (last && last.role === 'assistant' && last.id !== lastSpokenId.current) {
+      lastSpokenId.current = last.id;
+      speakMessage(last);
+    }
+  }, [messages, fullScreen]);
 
   useEffect(() => {
     const show = Keyboard.addListener(
@@ -270,28 +335,34 @@ export function AssistantSheet({ visible, onClose }: Props) {
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* Backdrop */}
-      <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-      </Animated.View>
+      {!fullScreen && (
+        <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        </Animated.View>
+      )}
 
-      {/* Sheet */}
-      <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.handle} />
+      <Animated.View
+        style={[
+          fullScreen ? styles.sheetFull : styles.sheet,
+          !fullScreen && { transform: [{ translateY }] },
+        ]}
+      >
+        <View style={[styles.header, fullScreen && styles.headerFull]}>
+          {!fullScreen && <View style={styles.handle} />}
           <View style={styles.headerContent}>
-            <View style={styles.avatarWrap}>
-              <Text style={styles.avatarEmoji}>✦</Text>
+            <View style={[styles.avatarWrap, fullScreen && styles.avatarWrapFull]}>
+              <Text style={[styles.avatarEmoji, fullScreen && styles.avatarEmojiFull]}>✦</Text>
             </View>
             <View>
-              <ThemedText type="defaultSemiBold" style={styles.headerTitle}>LÉIA</ThemedText>
-              <ThemedText style={styles.headerSub}>Assistante IDFM</ThemedText>
+              <ThemedText type="defaultSemiBold" style={[styles.headerTitle, fullScreen && styles.headerTitleFull]}>LÉIA</ThemedText>
+              <ThemedText style={[styles.headerSub, fullScreen && styles.headerSubFull]}>Assistante IDFM</ThemedText>
             </View>
           </View>
-          <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={12}>
-            <Text style={styles.closeX}>✕</Text>
-          </Pressable>
+          {!fullScreen && (
+            <Pressable onPress={onClose} style={styles.closeBtn} hitSlop={12}>
+              <Text style={styles.closeX}>✕</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Messages */}
@@ -304,10 +375,25 @@ export function AssistantSheet({ visible, onClose }: Props) {
           >
             {messages.map((msg) => (
               <View key={msg.id}>
-                <View style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant]}>
-                  <Text style={[styles.bubbleText, msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant]}>
+                <View style={[styles.bubble, fullScreen && styles.bubbleFull, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant]}>
+                  <Text style={[styles.bubbleText, fullScreen && styles.bubbleTextFull, msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAssistant]}>
                     {msg.text}
                   </Text>
+                  {msg.role === 'assistant' && (
+                    <Pressable
+                      onPress={() => speakMessage(msg)}
+                      style={[styles.speakBtn, fullScreen && styles.speakBtnFull]}
+                      accessibilityRole="button"
+                      accessibilityLabel={speakingId === msg.id ? 'Arrêter la lecture' : 'Écouter le message'}
+                      hitSlop={8}
+                    >
+                      <Ionicons
+                        name={speakingId === msg.id ? 'volume-high' : 'volume-high-outline'}
+                        size={fullScreen ? 24 : 16}
+                        color={Colors.textSecondary}
+                      />
+                    </Pressable>
+                  )}
                 </View>
 
                 {/* Confirmation d'une action proposée (encore en attente) */}
@@ -336,12 +422,11 @@ export function AssistantSheet({ visible, onClose }: Props) {
                       label={`${msg.cta.label} →`}
                       onPress={() => Linking.openURL(msg.cta!.url)}
                       variant="outline"
-                      size="sm"
+                      size={fullScreen ? 'lg' : 'sm'}
                     />
                   </View>
                 )}
 
-                {/* Suggestions */}
                 {msg.role === 'assistant' && msg.suggestions && msg.suggestions.length > 0 && (
                   <View style={styles.suggestions}>
                     {msg.suggestions.map((s, i) => (
@@ -350,7 +435,7 @@ export function AssistantSheet({ visible, onClose }: Props) {
                         label={s}
                         onPress={() => sendMessage(s)}
                         variant="outline"
-                        size="sm"
+                        size={fullScreen ? 'lg' : 'sm'}
                       />
                     ))}
                   </View>
@@ -365,13 +450,25 @@ export function AssistantSheet({ visible, onClose }: Props) {
             )}
           </ScrollView>
 
-          {/* Input */}
-          <View style={styles.inputRow}>
+          <View style={[styles.inputRow, fullScreen && styles.inputRowFull]}>
+            <Pressable
+              style={[styles.micBtn, fullScreen && styles.micBtnFull, listening && styles.micBtnActive]}
+              onPress={toggleListening}
+              disabled={loading}
+              accessibilityRole="button"
+              accessibilityLabel={listening ? "Arrêter l'écoute" : 'Dicter un message'}
+            >
+              <Ionicons
+                name={listening ? 'mic' : 'mic-outline'}
+                size={fullScreen ? 30 : 18}
+                color={listening ? Colors.white : Colors.textSecondary}
+              />
+            </Pressable>
             <TextInput
-              style={styles.input}
+              style={[styles.input, fullScreen && styles.inputFull]}
               value={input}
               onChangeText={setInput}
-              placeholder={t('assistant.placeholder')}
+              placeholder={listening ? 'Je vous écoute…' : t('assistant.placeholder')}
               placeholderTextColor={Colors.textTertiary}
               onSubmitEditing={() => sendMessage(input)}
               returnKeyType="send"
@@ -379,13 +476,13 @@ export function AssistantSheet({ visible, onClose }: Props) {
               multiline={false}
             />
             <Pressable
-              style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
+              style={[styles.sendBtn, fullScreen && styles.sendBtnFull, (!input.trim() || loading) && styles.sendBtnDisabled]}
               onPress={() => sendMessage(input)}
               disabled={!input.trim() || loading}
               accessibilityRole="button"
               accessibilityLabel="Envoyer"
             >
-              <Text style={styles.sendIcon}>↑</Text>
+              <Text style={[styles.sendIcon, fullScreen && styles.sendIconFull]}>↑</Text>
             </Pressable>
           </View>
         </View>
@@ -416,12 +513,23 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 20,
   },
+  sheetFull: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: Colors.background,
+  },
   header: {
     paddingTop: Spacing.sm,
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
+  },
+  headerFull: {
+    paddingTop: Spacing.xl,
   },
   handle: {
     width: 36,
@@ -444,9 +552,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarWrapFull: { width: 56, height: 56, borderRadius: 28 },
   avatarEmoji:  { color: '#fff', fontSize: 18 },
+  avatarEmojiFull: { fontSize: 26 },
   headerTitle:  { fontSize: 16, color: Colors.text },
+  headerTitleFull: { fontSize: 22 },
   headerSub:    { fontSize: 12, color: Colors.textSecondary },
+  headerSubFull: { fontSize: 16 },
   closeBtn:     { position: 'absolute', right: Spacing.lg, top: Spacing.sm + 4 },
   closeX:       { fontSize: 16, color: Colors.textSecondary },
 
@@ -459,6 +571,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
   },
+  bubbleFull: { maxWidth: '92%' },
   bubbleUser: {
     backgroundColor: Colors.primary,
     alignSelf: 'flex-end',
@@ -470,8 +583,11 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   bubbleText:          { fontSize: 15, lineHeight: 24 },
+  bubbleTextFull:      { fontSize: 19, lineHeight: 28 },
   bubbleTextUser:      { color: '#fff' },
   bubbleTextAssistant: { color: Colors.text },
+  speakBtn:            { alignSelf: 'flex-end', marginTop: 2 },
+  speakBtnFull:        { marginTop: Spacing.sm, padding: Spacing.xs },
 
   typingBubble: { paddingVertical: Spacing.sm },
   typingDots:   { color: Colors.textTertiary, letterSpacing: 3, fontSize: 12 },
@@ -506,6 +622,11 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.borderLight,
     backgroundColor: Colors.background,
   },
+  inputRowFull: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
   input: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -515,6 +636,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.text,
   },
+  inputFull: {
+    fontSize: 18,
+    paddingVertical: Platform.OS === 'ios' ? 16 : 14,
+    paddingHorizontal: Spacing.lg,
+  },
   sendBtn: {
     width: 40,
     height: 40,
@@ -523,6 +649,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  sendBtnFull: { width: 60, height: 60, borderRadius: 30 },
   sendBtnDisabled: { backgroundColor: Colors.border },
   sendIcon: { color: '#fff', fontSize: 18, fontWeight: '700' },
+  sendIconFull: { fontSize: 26 },
+  micBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  micBtnFull: { width: 60, height: 60, borderRadius: 30 },
+  micBtnActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
 });

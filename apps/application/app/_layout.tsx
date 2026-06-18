@@ -11,6 +11,7 @@ import { hasCurrentSubscription } from '@/lib/api';
 // Nécessaire pour Expo Web : ferme le popup OAuth et renvoie le token au parent
 WebBrowser.maybeCompleteAuthSession();
 
+import { AccessibilityProvider } from '@/context/accessibility-context';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { LocaleProvider } from '@/context/locale-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -99,13 +100,15 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <LocaleProvider>
-      <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <RootNavigator />
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </AuthProvider>
-    </LocaleProvider>
+    <AccessibilityProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <RootNavigator />
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </AuthProvider>
+      </LocaleProvider>
+    </AccessibilityProvider>
   );
 }
