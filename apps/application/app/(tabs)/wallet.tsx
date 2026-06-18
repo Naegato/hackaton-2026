@@ -12,6 +12,7 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
 import {
+  cancelSubscription,
   cancelTransfer,
   listAllMyDocuments,
   listMyPendingTransfers,
@@ -126,6 +127,32 @@ export default function WalletScreen() {
     return [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || (user?.email ?? '');
   }
 
+  // Résiliation en libre-service (confirmation obligatoire — action destructive)
+  function confirmCancel(sub: MySubscription) {
+    Alert.alert(t('cancelSub.confirmTitle'), t('cancelSub.confirmBody'), [
+      { text: t('cancelSub.no'), style: 'cancel' },
+      {
+        text: t('cancelSub.yes'),
+        style: 'destructive',
+        onPress: () => runTransferAction(sub.id, () => cancelSubscription(sub.id)),
+      },
+    ]);
+  }
+
+  function CancelButton({ sub }: { sub: MySubscription }) {
+    if (showHistory || isHistoryStatus(sub.status)) return null;
+    return (
+      <Button
+        label={t('cancelSub.action')}
+        variant="ghost"
+        size="sm"
+        style={styles.transferBtn}
+        loading={busyId === sub.id}
+        onPress={() => confirmCancel(sub)}
+      />
+    );
+  }
+
   const visible = subs.filter((s) => (showHistory ? isHistoryStatus(s.status) : !isHistoryStatus(s.status)));
   const mine = visible.filter(isForSelf);
   const relatives = visible.filter((s) => !isForSelf(s));
@@ -195,19 +222,7 @@ export default function WalletScreen() {
             ) : null}
           </>
         ) : null}
-      </View>
-    );
-  }
-
-  function Section({ title, items }: { title: TranslationKey; items: MySubscription[] }) {
-    return (
-      <View style={styles.section}>
-        <ThemedText type="subtitle">{t(title)}</ThemedText>
-        {items.length > 0 ? (
-          <View style={styles.cards}>{items.map(renderCard)}</View>
-        ) : (
-          <ThemedText style={styles.none}>{t('mysubs.noneHere')}</ThemedText>
-        )}
+        <CancelButton sub={sub} />
       </View>
     );
   }
@@ -271,7 +286,22 @@ export default function WalletScreen() {
               </View>
             ) : null}
 
-            <Section title="mysubs.forMe" items={mine} />
+            {/* Abonnements pour moi : avec résiliation */}
+            <View style={styles.section}>
+              <ThemedText type="subtitle">{t('mysubs.forMe')}</ThemedText>
+              {mine.length > 0 ? (
+                <View style={styles.cards}>
+                  {mine.map((sub) => (
+                    <View key={sub.id} style={styles.relativeItem}>
+                      {renderCard(sub)}
+                      <CancelButton sub={sub} />
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <ThemedText style={styles.none}>{t('mysubs.noneHere')}</ThemedText>
+              )}
+            </View>
 
             {/* Abonnements pour mes proches : avec action de transfert */}
             <View style={styles.section}>

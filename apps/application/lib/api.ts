@@ -171,10 +171,10 @@ export function me(): Promise<MeResponse> {
   return request<MeResponse>('/api/users/me', { method: 'GET' }, true);
 }
 
-/** Met à jour le compte courant (préférences, onboardingCompleted…). */
+/** Met à jour le compte courant (identité, préférences, onboardingCompleted…). */
 export function updateUser(
   id: string,
-  data: { preferences?: Preferences; onboardingCompleted?: boolean },
+  data: { firstName?: string; lastName?: string; preferences?: Preferences; onboardingCompleted?: boolean },
 ): Promise<{ doc: User }> {
   return request<{ doc: User }>(`/api/users/${id}`, {
     method: 'PATCH',
@@ -333,6 +333,11 @@ export async function getSubscriptionHolder(
   };
 }
 
+/** Résilie un abonnement (le gestionnaire courant). Le statut passe à « résilié » → l'abonnement bascule dans l'historique. */
+export function cancelSubscription(id: string): Promise<unknown> {
+  return request(`/api/subscriptions/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled' }) }, true);
+}
+
 /** Met à jour les informations du titulaire d'un abonnement (par le gestionnaire courant). */
 export function updateSubscriptionHolder(
   id: string,
@@ -428,16 +433,61 @@ export function verifyPhoto(
   );
 }
 
+/** Action de self-service proposée par l'assistant, à confirmer puis appliquer via l'API authentifiée. */
+export type AssistantAction =
+  | { type: 'updateProfile'; summary: string; firstName?: string; lastName?: string }
+  | {
+      type: 'updatePreferences';
+      summary: string;
+      birthdate?: string;
+      status?: Preferences['status'];
+      usageDaysPerWeek?: number;
+      socialBeneficiary?: boolean;
+    }
+  | { type: 'initiateTransfer'; summary: string; subscriptionRef: string; toEmail: string }
+  | {
+      type: 'updateHolder';
+      summary: string;
+      subscriptionRef: string;
+      holderFirstName: string;
+      holderLastName: string;
+    }
+  | { type: 'cancelSubscription'; summary: string; subscriptionRef: string }
+  | {
+      type: 'createSubscription';
+      summary: string;
+      planRef: string;
+      forWhom: 'me' | 'relative';
+      holderFirstName?: string;
+      holderLastName?: string;
+    }
+  | { type: 'setLanguage'; summary: string; locale: 'fr' | 'en' | 'es' | 'zh' };
+
 export type AssistantResponse = {
   answer: string;
   suggestions: string[];
   cta: { label: string; url: string } | null;
+  action?: AssistantAction | null;
 };
 
-/** Envoie un message à l'assistant LÉIA. */
-export function askAssistant(message: string, screen?: string): Promise<AssistantResponse> {
-  return request<AssistantResponse>('/api/assistant', {
-    method: 'POST',
-    body: JSON.stringify({ message, screen }),
-  });
+export type AssistantTurn = { role: 'user' | 'assistant'; content: string };
+
+/**
+ * Envoie un message à l'assistant LÉIA. Authentifié : le JWT permet à l'assistant de répondre sur le compte de l'utilisateur.
+ * `history` = échanges précédents (mémoire multi-tours, pour qu'il se souvienne de ses propres questions).
+ */
+export function askAssistant(
+  message: string,
+  screen?: string,
+  history?: AssistantTurn[],
+  locale?: string,
+): Promise<AssistantResponse> {
+  return request<AssistantResponse>(
+    '/api/assistant',
+    {
+      method: 'POST',
+      body: JSON.stringify({ message, screen, history, locale }),
+    },
+    true,
+  );
 }

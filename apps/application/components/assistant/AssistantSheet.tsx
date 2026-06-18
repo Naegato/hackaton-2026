@@ -17,12 +17,44 @@ import {
 import { usePathname } from 'expo-router';
 
 import * as api from '@/lib/api';
-import { ApiError } from '@/lib/api';
+import { ApiError, type AssistantAction } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
+import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
+
+const normFr = (s: string) =>
+  s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+const isAffirmation = (s: string) =>
+  /^(oui|ouais|ok|okay|d.?accord|confirme[rz]?|valide[rz]?|applique[rz]?|vas-?y|c.?est bon|parfait|je confirme)\b/.test(
+    normFr(s),
+  );
+const isNegation = (s: string) =>
+  /^(non|annule[rz]?|laisse tomber|stop|pas maintenant|surtout pas|annulation)\b/.test(normFr(s));
+
+// Détection déterministe d'une demande de changement de langue (ne dépend pas du modèle)
+const LANG_TOKENS: { re: RegExp; locale: 'fr' | 'en' | 'es' | 'zh' }[] = [
+  { re: /(francais|french)/, locale: 'fr' },
+  { re: /(anglais|english)/, locale: 'en' },
+  { re: /(espagnol|spanish|espanol)/, locale: 'es' },
+  { re: /(chinois|chinese|mandarin)/, locale: 'zh' },
+];
+const LANG_INTENT =
+  /\b(repond\w*|reponse|parl\w*|ecri\w*|dis|dire|passe|bascule|traduis\w*|answer|reply|speak|write|switch|change|talk|continue|en|in)\b/;
+function detectLanguageRequest(msg: string): 'fr' | 'en' | 'es' | 'zh' | null {
+  const m = normFr(msg);
+  const hit = LANG_TOKENS.find((l) => l.re.test(m));
+  if (!hit) return null;
+  return LANG_INTENT.test(m) ? hit.locale : null;
+}
+const SWITCH_CONFIRM: Record<'fr' | 'en' | 'es' | 'zh', string> = {
+  fr: "D'accord, je réponds désormais en français. Comment puis-je vous aider ?",
+  en: "Sure, I'll reply in English from now on. How can I help you?",
+  es: 'De acuerdo, responderé en español a partir de ahora. ¿En qué puedo ayudarle?',
+  zh: '好的，我现在起用中文回复。请问有什么可以帮您？',
+};
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.72;
@@ -40,6 +72,7 @@ type Message = {
   text: string;
   suggestions?: string[];
   cta?: { label: string; url: string } | null;
+  action?: AssistantAction | null;
 };
 
 type Props = {
@@ -48,7 +81,8 @@ type Props = {
 };
 
 export function AssistantSheet({ visible, onClose }: Props) {
-  const { t } = useLocale();
+  const { t, locale, setLocale } = useLocale();
+  const { user, refreshUser } = useAuth();
   const pathname = usePathname();
   const translateY      = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
@@ -57,6 +91,8 @@ export function AssistantSheet({ visible, onClose }: Props) {
   const [input,      setInput]      = useState('');
   const [loading,    setLoading]    = useState(false);
   const [kbHeight,   setKbHeight]   = useState(0);
+  // Action proposée par LÉIA, en attente de confirmation (par message « oui » ou bouton)
+  const [pendingAction, setPendingAction] = useState<AssistantAction | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -81,7 +117,7 @@ export function AssistantSheet({ visible, onClose }: Props) {
           id: 'greeting',
           role: 'assistant',
           text: t('assistant.greeting'),
-          suggestions: QUICK_TOPICS.map(tp => tp.q),
+          suggestions: QUICK_TOPICS.map(tp => t(tp.key)),
         }]);
       }
       Animated.parallel([
@@ -96,22 +132,127 @@ export function AssistantSheet({ visible, onClose }: Props) {
     }
   }, [visible]);
 
+  const scrollSoon = () => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+
+  function pushAssistant(text: string) {
+    setMessages(prev => [...prev, { id: `${Date.now()}-${prev.length}`, role: 'assistant', text }]);
+    scrollSoon();
+  }
+
+  // Exécute l'action confirmée via l'API authentifiée (mêmes droits que l'utilisateur dans l'app)
+  async function executeAction(action: AssistantAction) {
+    if (!user) throw new ApiError(t('assistant.errorGeneric'), 401);
+    switch (action.type) {
+      case 'updateProfile':
+        await api.updateUser(user.id, { firstName: action.firstName, lastName: action.lastName });
+        break;
+      case 'updatePreferences': {
+        const merged = { ...(user.preferences ?? {}) };
+        if (action.birthdate !== undefined) merged.birthdate = action.birthdate;
+        if (action.status !== undefined) merged.status = action.status;
+        if (action.usageDaysPerWeek !== undefined) merged.usageDaysPerWeek = action.usageDaysPerWeek;
+        if (action.socialBeneficiary !== undefined) merged.socialBeneficiary = action.socialBeneficiary;
+        await api.updateUser(user.id, { preferences: merged });
+        break;
+      }
+      case 'initiateTransfer':
+        await api.createTransferRequest({ subscription: action.subscriptionRef, toEmail: action.toEmail });
+        break;
+      case 'updateHolder':
+        await api.updateSubscriptionHolder(action.subscriptionRef, {
+          holderFirstName: action.holderFirstName,
+          holderLastName: action.holderLastName,
+        });
+        break;
+      case 'cancelSubscription':
+        await api.cancelSubscription(action.subscriptionRef);
+        break;
+      case 'createSubscription':
+        await api.createSubscription({
+          plan: action.planRef,
+          holderFirstName:
+            action.forWhom === 'relative' ? action.holderFirstName : user.firstName ?? undefined,
+          holderLastName:
+            action.forWhom === 'relative' ? action.holderLastName : user.lastName ?? undefined,
+        });
+        break;
+    }
+  }
+
+  async function applyAction(action: AssistantAction) {
+    if (loading) return;
+    setPendingAction(null);
+    setLoading(true);
+    scrollSoon();
+    try {
+      await executeAction(action);
+      if (action.type === 'updateProfile' || action.type === 'updatePreferences') await refreshUser();
+      pushAssistant(`✓ ${t('assistant.applied')}`);
+    } catch (err) {
+      pushAssistant(err instanceof ApiError ? `${t('assistant.applyError')} ${err.message}` : t('assistant.applyError'));
+    } finally {
+      setLoading(false);
+      scrollSoon();
+    }
+  }
+
+  function cancelAction() {
+    setPendingAction(null);
+    pushAssistant(t('assistant.cancelled'));
+  }
+
   async function sendMessage(text: string) {
     if (!text.trim() || loading) return;
-    const userMsg: Message = { id: Date.now().toString(), role: 'user', text: text.trim() };
-    setMessages(prev => [...prev, userMsg]);
+    const trimmed = text.trim();
+    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text: trimmed }]);
     setInput('');
-    setLoading(true);
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    scrollSoon();
 
+    // Changement de langue à la demande : traité localement (déterministe, sans dépendre du modèle)
+    const langReq = detectLanguageRequest(trimmed);
+    if (langReq) {
+      if (langReq !== locale) setLocale(langReq);
+      setPendingAction(null);
+      pushAssistant(SWITCH_CONFIRM[langReq]);
+      return;
+    }
+
+    // Confirmation par message d'une action en attente (accessible : pas besoin du bouton)
+    if (pendingAction) {
+      if (isAffirmation(trimmed)) {
+        await applyAction(pendingAction);
+        return;
+      }
+      if (isNegation(trimmed)) {
+        cancelAction();
+        return;
+      }
+      // L'utilisateur passe à autre chose : on abandonne l'action en attente
+      setPendingAction(null);
+    }
+
+    setLoading(true);
     try {
-      const res = await api.askAssistant(text.trim(), pathname);
+      // Historique (mémoire multi-tours) : les échanges précédents, hors message d'accueil et hors message courant
+      const history = messages
+        .filter(m => m.id !== 'greeting')
+        .slice(-8)
+        .map(m => ({ role: m.role, content: m.text }));
+      const res = await api.askAssistant(trimmed, pathname, history, locale);
+      // Changement de langue : préférence d'affichage → appliquée immédiatement, sans confirmation
+      if (res.action?.type === 'setLanguage') {
+        setLocale(res.action.locale);
+        setPendingAction(null);
+      } else {
+        setPendingAction(res.action ?? null);
+      }
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         text: res.answer,
         suggestions: res.suggestions,
         cta: res.cta,
+        action: res.action ?? null,
       }]);
     } catch (err) {
       setMessages(prev => [...prev, {
@@ -121,7 +262,7 @@ export function AssistantSheet({ visible, onClose }: Props) {
       }]);
     } finally {
       setLoading(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+      scrollSoon();
     }
   }
 
@@ -168,6 +309,25 @@ export function AssistantSheet({ visible, onClose }: Props) {
                     {msg.text}
                   </Text>
                 </View>
+
+                {/* Confirmation d'une action proposée (encore en attente) */}
+                {msg.role === 'assistant' && msg.action && pendingAction === msg.action && (
+                  <View style={styles.confirmRow}>
+                    <Button
+                      label={t('assistant.apply')}
+                      onPress={() => applyAction(msg.action!)}
+                      size="sm"
+                      disabled={loading}
+                    />
+                    <Button
+                      label={t('assistant.cancel')}
+                      onPress={cancelAction}
+                      variant="outline"
+                      size="sm"
+                      disabled={loading}
+                    />
+                  </View>
+                )}
 
                 {/* CTA */}
                 {msg.cta && (
@@ -318,6 +478,12 @@ const styles = StyleSheet.create({
 
   ctaWrap: {
     alignSelf: 'flex-start',
+    marginTop: Spacing.xs,
+    marginLeft: 4,
+  },
+  confirmRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs,
     marginTop: Spacing.xs,
     marginLeft: 4,
   },
