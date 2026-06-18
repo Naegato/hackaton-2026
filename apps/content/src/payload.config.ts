@@ -26,6 +26,17 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      views: {
+        dashboard: {
+          Component: './components/Dashboard',
+          path: '/',
+        },
+      },
+    },
+    meta: {
+      titleSuffix: '— IDF Mobilité Admin',
+    },
   },
   collections: [Users, Media, Plans, Subscriptions, TransferRequests],
   globals: pageGlobals,
