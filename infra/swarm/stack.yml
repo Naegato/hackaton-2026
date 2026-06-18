@@ -6,7 +6,10 @@
 #     --compose-file infra/swarm/stack.yml \
 #     hackaton
 #
-# Port mapping: host 3001 → container 3000 (host:3000 is already occupied)
+# Port mapping: 3001 → container 3000 (host:3000 is already occupied).
+# Published via the swarm routing mesh (ingress) so an external cloudflared
+# (running a layer above this VM) can reach it at http://<VM-IP>:3001 and it
+# load-balances across the api replicas.
 # Secrets must be pre-created on the swarm — see infra/scripts/secrets-update.sh
 
 version: "3.9"
@@ -19,7 +22,7 @@ services:
       - target: 3000
         published: 3001
         protocol: tcp
-        mode: host        # host-mode so cloudflared can reach localhost:3001
+        mode: ingress     # routing mesh — load-balances across replicas
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
@@ -96,24 +99,9 @@ services:
         limits:
           memory: 512M
 
-  # ── Cloudflare Tunnel ────────────────────────────────────────────────────────
-  # Routes <your-domain> → http://api:3000 via an outbound-only tunnel.
-  # Create a tunnel in Zero Trust dashboard and set CLOUDFLARE_TUNNEL_TOKEN.
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run
-    environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
-    networks:
-      - backend
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-        delay: 10s
-      resources:
-        limits:
-          memory: 64M
+# Note: external traffic is handled by a cloudflared instance running a layer
+# above this VM (Proxmox host / edge). It routes the public hostname to
+# http://<VM-IP>:3001, so no tunnel container runs inside this stack.
 
 volumes:
   mongodb_data:

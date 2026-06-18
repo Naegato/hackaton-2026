@@ -96,7 +96,6 @@ jobs:
           APP_PUBLIC_URL: ${{ secrets.APP_PUBLIC_URL }}
           GOOGLE_REDIRECT_URI: ${{ secrets.GOOGLE_REDIRECT_URI }}
           APP_OAUTH_REDIRECT_URI: ${{ secrets.APP_OAUTH_REDIRECT_URI }}
-          CLOUDFLARE_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
         run: |
