@@ -12,6 +12,8 @@ import { Plans } from './collections/Plans'
 import { Subscriptions } from './collections/Subscriptions'
 import { SubscriptionDocuments } from './collections/SubscriptionDocuments'
 import { TransferRequests } from './collections/TransferRequests'
+import { Notifications } from './collections/Notifications'
+import { NotificationBroadcasts } from './collections/NotificationBroadcasts'
 import { pageGlobals } from './globals/Pages'
 import { defaultLocale, locales } from './locales'
 import { googleOAuthCallback, googleOAuthRedirect } from './endpoints/oauth-google'
@@ -39,7 +41,7 @@ export default buildConfig({
       titleSuffix: '— IDF Mobilité Admin',
     },
   },
-  collections: [Users, Media, Plans, Subscriptions, SubscriptionDocuments, TransferRequests],
+  collections: [Users, Media, Plans, Subscriptions, SubscriptionDocuments, TransferRequests, Notifications, NotificationBroadcasts],
   globals: pageGlobals,
   // Localization : le contenu marqué `localized` est stocké par langue.
   // L'API renvoie la bonne version via ?locale=<code> ; fallback sur le français si traduction absente.

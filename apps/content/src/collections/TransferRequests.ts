@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import { isAdmin, isAuthenticated, isStaffFromUser, ownedByAny } from '../access/roles'
+import { createNotification } from '../lib/notifications'
 
 /** Normalise une valeur relationnelle (id string ou objet peuplé) en id. */
 const toId = (value: unknown): string => {
@@ -237,6 +238,17 @@ export const TransferRequests: CollectionConfig = {
                 },
               ],
             },
+          })
+
+          await createNotification({
+            payload: req.payload,
+            req,
+            userId: toId(doc.fromUser),
+            type: 'TRANSFER_SENT',
+            title: 'Transfert finalisé',
+            message: 'Votre transfert d’abonnement a été accepté et finalisé.',
+            metadata: { transferRequestId: doc.id, subscriptionId: subId },
+            sendEmail: true,
           })
         }
         return doc

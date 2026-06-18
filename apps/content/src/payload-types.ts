@@ -73,6 +73,8 @@ export interface Config {
     subscriptions: Subscription;
     'subscription-documents': SubscriptionDocument;
     'transfer-requests': TransferRequest;
+    notifications: Notification;
+    'notification-broadcasts': NotificationBroadcast;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +88,8 @@ export interface Config {
     subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
     'subscription-documents': SubscriptionDocumentsSelect<false> | SubscriptionDocumentsSelect<true>;
     'transfer-requests': TransferRequestsSelect<false> | TransferRequestsSelect<true>;
+    notifications: NotificationsSelect<false> | NotificationsSelect<true>;
+    'notification-broadcasts': NotificationBroadcastsSelect<false> | NotificationBroadcastsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -396,6 +400,71 @@ export interface TransferRequest {
   createdAt: string;
 }
 /**
+ * Notifications in-app envoyées aux utilisateurs.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications".
+ */
+export interface Notification {
+  id: string;
+  /**
+   * Destinataire de la notification
+   */
+  user: string | User;
+  type: 'EXPIRATION_IMMINENT' | 'RENEWAL' | 'PROMOTION' | 'TRANSFER_RECEIVED' | 'TRANSFER_SENT';
+  title: string;
+  message: string;
+  /**
+   * Statut lu / non lu
+   */
+  read?: boolean | null;
+  /**
+   * Envoyer aussi un email à la création (n'a aucun effet après coup)
+   */
+  sendEmail?: boolean | null;
+  /**
+   * Contexte additionnel (ex. id abonnement, id transfert…)
+   */
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Diffuse une notification (+ email optionnel) à tous les comptes ou à une sélection.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-broadcasts".
+ */
+export interface NotificationBroadcast {
+  id: string;
+  type: 'EXPIRATION_IMMINENT' | 'RENEWAL' | 'PROMOTION' | 'TRANSFER_RECEIVED' | 'TRANSFER_SENT';
+  title: string;
+  message: string;
+  audience: 'all' | 'selected';
+  /**
+   * Comptes ciblés (uniquement si audience = "Destinataires sélectionnés")
+   */
+  recipients?: (string | User)[] | null;
+  /**
+   * Envoyer aussi un email à chaque destinataire
+   */
+  sendEmail?: boolean | null;
+  /**
+   * Nombre de destinataires notifiés (renseigné après l'envoi)
+   */
+  sentCount?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -442,6 +511,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transfer-requests';
         value: string | TransferRequest;
+      } | null)
+    | ({
+        relationTo: 'notifications';
+        value: string | Notification;
+      } | null)
+    | ({
+        relationTo: 'notification-broadcasts';
+        value: string | NotificationBroadcast;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -635,6 +712,36 @@ export interface TransferRequestsSelect<T extends boolean = true> {
   fromName?: T;
   planName?: T;
   holderName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notifications_select".
+ */
+export interface NotificationsSelect<T extends boolean = true> {
+  user?: T;
+  type?: T;
+  title?: T;
+  message?: T;
+  read?: T;
+  sendEmail?: T;
+  metadata?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notification-broadcasts_select".
+ */
+export interface NotificationBroadcastsSelect<T extends boolean = true> {
+  type?: T;
+  title?: T;
+  message?: T;
+  audience?: T;
+  recipients?: T;
+  sendEmail?: T;
+  sentCount?: T;
   updatedAt?: T;
   createdAt?: T;
 }

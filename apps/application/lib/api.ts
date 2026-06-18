@@ -441,3 +441,54 @@ export function askAssistant(message: string, screen?: string): Promise<Assistan
     body: JSON.stringify({ message, screen }),
   });
 }
+
+export type NotificationType =
+  | 'EXPIRATION_IMMINENT'
+  | 'RENEWAL'
+  | 'PROMOTION'
+  | 'TRANSFER_RECEIVED'
+  | 'TRANSFER_SENT';
+
+export type Notification = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  read: boolean;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+};
+
+/** Liste les notifications du compte courant, les plus récentes en premier. */
+export function listNotifications(params: { unreadOnly?: boolean; limit?: number } = {}): Promise<{
+  docs: Notification[];
+}> {
+  const qs = new URLSearchParams();
+  if (params.unreadOnly) qs.set('where[read][equals]', 'false');
+  qs.set('sort', '-createdAt');
+  qs.set('limit', String(params.limit ?? 50));
+  return request<{ docs: Notification[] }>(`/api/notifications?${qs.toString()}`, { method: 'GET' }, true);
+}
+
+/** Nombre de notifications non lues du compte courant. */
+export function getUnreadNotificationCount(): Promise<{ count: number }> {
+  return request<{ count: number }>('/api/notifications/unread-count', { method: 'GET' }, true);
+}
+
+/** Marque une notification comme lue. */
+export function markNotificationAsRead(id: string): Promise<{ doc: Notification }> {
+  return request<{ doc: Notification }>(`/api/notifications/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ read: true }),
+  }, true);
+}
+
+/** Marque toutes les notifications non lues du compte courant comme lues. */
+export function markAllNotificationsAsRead(): Promise<{ updated: number }> {
+  return request<{ updated: number }>('/api/notifications/mark-all-read', { method: 'POST' }, true);
+}
+
+/** Supprime une notification. */
+export function deleteNotification(id: string): Promise<unknown> {
+  return request(`/api/notifications/${id}`, { method: 'DELETE' }, true);
+}
