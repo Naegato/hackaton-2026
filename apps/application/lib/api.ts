@@ -215,29 +215,44 @@ export type SubscriptionDoc = {
   subscription?: string | null;
 };
 
+export type PlanEligibility = RecommendationResult['plans'][number]['eligibility'];
+
 export type MySubscription = {
   id: string;
   status: string;
-  plan: { slug: string; name: string } | null;
+  plan: { id: string; slug: string; name: string; eligibility?: PlanEligibility } | null;
   holderFirstName?: string | null;
   holderLastName?: string | null;
 };
 
-/** Liste les abonnements du compte courant (offre peuplée). */
+/** Liste les abonnements du compte courant (offre peuplée, avec éligibilité pour déduire les documents requis). */
 export async function listMySubscriptions(): Promise<MySubscription[]> {
   const res = await request<{
     docs: { id: string; status: string; plan: unknown; holderFirstName?: string; holderLastName?: string }[];
   }>('/api/subscriptions?depth=1&limit=50&sort=-createdAt', { method: 'GET' }, true);
   return res.docs.map((d) => {
-    const plan = d.plan as { slug?: string; name?: string } | null;
+    const plan = d.plan as { id?: string; slug?: string; name?: string; eligibility?: PlanEligibility } | null;
     return {
       id: d.id,
       status: d.status,
-      plan: plan && typeof plan === 'object' ? { slug: plan.slug ?? '', name: plan.name ?? '' } : null,
+      plan:
+        plan && typeof plan === 'object'
+          ? { id: plan.id ?? '', slug: plan.slug ?? '', name: plan.name ?? '', eligibility: plan.eligibility ?? null }
+          : null,
       holderFirstName: d.holderFirstName ?? null,
       holderLastName: d.holderLastName ?? null,
     };
   });
+}
+
+/** Indique si le compte courant possède au moins un abonnement « en cours » (actif ou en validation, hors expiré/résilié). */
+export async function hasCurrentSubscription(): Promise<boolean> {
+  const res = await request<{ totalDocs?: number }>(
+    '/api/subscriptions?where[status][in][0]=active&where[status][in][1]=pending&limit=1&depth=0',
+    { method: 'GET' },
+    true,
+  );
+  return (res.totalDocs ?? 0) > 0;
 }
 
 /** Liste tous les documents du compte courant (tous abonnements confondus). */

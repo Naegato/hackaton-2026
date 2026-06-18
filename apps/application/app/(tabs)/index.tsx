@@ -1,8 +1,10 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { PlanCard } from '@/components/plan-card';
+import { RelativeCta } from '@/components/relative-cta';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/Colors';
@@ -69,7 +71,24 @@ export default function OffersScreen() {
             }}
           />
         }>
-        <ThemedText type="title">{t(hasPrefs ? 'offers.titleEligible' : 'offers.title')}</ThemedText>
+        <View style={styles.header}>
+          <ThemedText type="title" style={styles.headerTitle}>
+            {t(hasPrefs ? 'offers.titleEligible' : 'offers.title')}
+          </ThemedText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('nav.preferences')}
+            onPress={() => router.push('/preferences')}
+            style={({ pressed }) => [styles.prefsBtn, pressed && styles.pressed]}>
+            <MaterialIcons name="tune" size={20} color={Colors.primary} />
+            <ThemedText
+              style={styles.prefsText}
+              lightColor={Colors.primary}
+              darkColor={Colors.primary}>
+              {t('nav.preferences')}
+            </ThemedText>
+          </Pressable>
+        </View>
 
         {!hasPrefs ? (
           <Pressable
@@ -101,6 +120,9 @@ export default function OffersScreen() {
             />
           ))
         )}
+
+        {/* Souscrire pour un proche : proposé après les offres pour soi */}
+        {!loading && !error ? <RelativeCta style={styles.relativeCta} /> : null}
       </ScrollView>
     </ThemedView>
   );
@@ -109,6 +131,20 @@ export default function OffersScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20, paddingTop: 64, gap: 14 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  headerTitle: { flexShrink: 1 },
+  prefsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  prefsText: { fontSize: 13, fontWeight: '600' },
+  relativeCta: { marginTop: 6 },
   cta: {
     borderWidth: 1,
     borderColor: Colors.primary,

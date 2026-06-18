@@ -4,16 +4,19 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 
 import { NavigoCard } from '@/components/navigo-card';
+import { RelativeCta } from '@/components/relative-cta';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
-import { listMySubscriptions, type MySubscription } from '@/lib/api';
+import { listAllMyDocuments, listMySubscriptions, type MySubscription, type SubscriptionDoc } from '@/lib/api';
 import type { TranslationKey } from '@/lib/i18n';
+import { subscriptionDisplayStatus } from '@/lib/plan-eligibility';
 
 const SUB_STATUS_COLOR: Record<string, string> = {
-  pending: Colors.warning,
+  pending: Colors.info,
+  'awaiting-documents': Colors.warning,
   active: Colors.success,
   expired: Colors.textSecondary,
   cancelled: Colors.danger,
@@ -28,6 +31,7 @@ export default function WalletScreen() {
   const router = useRouter();
 
   const [subs, setSubs] = useState<MySubscription[]>([]);
+  const [docsBySub, setDocsBySub] = useState<Record<string, SubscriptionDoc[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -35,7 +39,15 @@ export default function WalletScreen() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      setSubs(await listMySubscriptions());
+      // Abonnements + tous les documents en parallèle : on en déduit le statut « en attente des documents »
+      const [list, docs] = await Promise.all([listMySubscriptions(), listAllMyDocuments()]);
+      const grouped: Record<string, SubscriptionDoc[]> = {};
+      for (const d of docs) {
+        if (!d.subscription) continue;
+        (grouped[d.subscription] ??= []).push(d);
+      }
+      setSubs(list);
+      setDocsBySub(grouped);
     } catch {
       setError(t('mysubs.loadError'));
     } finally {
@@ -67,13 +79,18 @@ export default function WalletScreen() {
   const relatives = visible.filter((s) => !isForSelf(s));
 
   function renderCard(sub: MySubscription) {
+    const displayStatus = subscriptionDisplayStatus(
+      sub.status,
+      sub.plan?.eligibility ?? null,
+      docsBySub[sub.id] ?? [],
+    );
     return (
       <NavigoCard
         key={sub.id}
         holderName={holderName(sub)}
         planName={sub.plan?.name ?? '—'}
-        statusLabel={t(`subStatus.${sub.status}` as TranslationKey)}
-        statusColor={SUB_STATUS_COLOR[sub.status] ?? Colors.textSecondary}
+        statusLabel={t(`subStatus.${displayStatus}` as TranslationKey)}
+        statusColor={SUB_STATUS_COLOR[displayStatus] ?? Colors.textSecondary}
         onPress={() => sub.plan?.slug && router.push(`/subscribe/${sub.plan.slug}`)}
       />
     );
@@ -124,6 +141,9 @@ export default function WalletScreen() {
             <Section title="mysubs.forRelatives" items={relatives} />
           </>
         )}
+
+        {/* Souscrire pour un proche : formulaire dédié → sélection d'offre → abonnement au nom du proche */}
+        <RelativeCta style={styles.relativeCta} />
       </ScrollView>
     </ThemedView>
   );
@@ -150,4 +170,5 @@ const styles = StyleSheet.create({
   cards: { gap: 14 },
   none: { opacity: 0.6 },
   error: { color: '#d33', marginTop: 24 },
+  relativeCta: { marginTop: 8 },
 });

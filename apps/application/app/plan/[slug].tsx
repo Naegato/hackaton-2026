@@ -11,6 +11,7 @@ import { Colors } from '@/constants/Colors';
 import { useLocale } from '@/context/locale-context';
 import { getRecommendation, type RecommendationResult } from '@/lib/api';
 import type { TranslationKey } from '@/lib/i18n';
+import { planDescriptionKey } from '@/lib/plan-descriptions';
 import { eligibilityLines, requiredDocuments } from '@/lib/plan-eligibility';
 import { formatPlanPrice, planImageSource } from '@/lib/plan-images';
 
@@ -71,6 +72,7 @@ export default function PlanDetailScreen() {
   }
 
   const img = planImageSource(plan);
+  const descKey = planDescriptionKey(plan.slug);
   const eligibility = eligibilityLines(plan, t);
   const documents = requiredDocuments(plan, t);
 
@@ -99,7 +101,7 @@ export default function PlanDetailScreen() {
                   accessibilityLabel={t('detail.zonesInfo')}
                   onPress={() => setShowZonesInfo((v) => !v)}
                   hitSlop={8}>
-                  <MaterialIcons name="info-outline" size={16} color={Colors.textSecondary} />
+                  <MaterialIcons name="info-outline" size={20} color={Colors.primary} />
                 </Pressable>
               </View>
               {showZonesInfo ? (
@@ -107,6 +109,9 @@ export default function PlanDetailScreen() {
               ) : null}
             </>
           ) : null}
+
+          {/* Descriptif court : pour qui ? quelles spécificités ? */}
+          {descKey ? <ThemedText style={styles.description}>{t(descKey)}</ThemedText> : null}
 
           {/* Éligibilité */}
           <View style={styles.sectionTitle}>
@@ -168,6 +173,15 @@ const styles = StyleSheet.create({
   hero: { width: '100%', height: 200, backgroundColor: Colors.borderLight },
   body: { padding: 20, gap: 10 },
   price: { fontSize: 18, opacity: 0.9 },
+  description: {
+    fontSize: 15,
+    lineHeight: 21,
+    opacity: 0.85,
+    marginTop: 6,
+    backgroundColor: Colors.primarySurface,
+    borderRadius: 10,
+    padding: 12,
+  },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rowText: { fontSize: 15 },
   zonesNote: {
