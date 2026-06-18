@@ -20,25 +20,29 @@ import { Radius, Shadow, Spacing } from '@/constants/Spacing';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
 
-// #DC2626 = rouge RGAA-conforme sur fond blanc (4.61:1) et texte blanc sur ce fond (4.61:1)
+// #DC2626 sur fond blanc = 4.61:1 → conforme RGAA AA (texte normal)
 const DANGER_ACCESSIBLE = '#DC2626';
 
 // ---------------------------------------------------------------------------
 // Sous-composants
 // ---------------------------------------------------------------------------
 
-function Avatar({ firstName, lastName, email }: {
+function Avatar({
+  firstName,
+  lastName,
+  email,
+}: {
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;
 }) {
-  const initials = [firstName?.[0], lastName?.[0]]
-    .filter(Boolean)
-    .join('')
-    .toUpperCase() || email?.[0]?.toUpperCase() || '?';
+  const initials =
+    [firstName?.[0], lastName?.[0]].filter(Boolean).join('').toUpperCase() ||
+    email?.[0]?.toUpperCase() ||
+    '?';
   return (
-    // Décoratif : le nom est affiché à côté, le lecteur d'écran n'a pas besoin de l'avatar
-    <View style={styles.avatar} importantForAccessibility="no-hide-descendants" aria-hidden>
+    // Décoratif : le nom est affiché à côté, inutile pour les lecteurs d'écran
+    <View style={styles.avatar} importantForAccessibility="no-hide-descendants">
       <Text style={styles.avatarText}>{initials}</Text>
     </View>
   );
@@ -69,7 +73,9 @@ function NavRow({
       <ThemedText style={styles.navRowLabel}>{label}</ThemedText>
       {right ?? (
         // Chevron décoratif — masqué aux lecteurs d'écran
-        <Text style={styles.navRowChevron} importantForAccessibility="no">›</Text>
+        <Text style={styles.navRowChevron} importantForAccessibility="no">
+          ›
+        </Text>
       )}
     </TouchableOpacity>
   );
@@ -86,7 +92,7 @@ function Separator() {
 }
 
 // ---------------------------------------------------------------------------
-// Écran principal
+// Écran
 // ---------------------------------------------------------------------------
 
 export default function ProfileScreen() {
@@ -100,7 +106,9 @@ export default function ProfileScreen() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
-  const isStaff = user?.roles?.some((r) => ['developer', 'admin', 'comutitres_manager'].includes(r));
+  const isStaff = user?.roles?.some((r) =>
+    ['developer', 'admin', 'comutitres_manager'].includes(r)
+  );
 
   async function handleDeleteAccount() {
     setDeleting(true);
@@ -120,13 +128,20 @@ export default function ProfileScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + Spacing['2xl'], paddingBottom: Math.max(insets.bottom, Spacing['3xl']) },
+          {
+            paddingTop: insets.top + Spacing['2xl'],
+            paddingBottom: Math.max(insets.bottom, Spacing['3xl']),
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Zone utilisateur ─────────────────────────────────────── */}
+        {/* Zone utilisateur */}
         <View style={styles.userSection}>
-          <Avatar firstName={user?.firstName} lastName={user?.lastName} email={user?.email} />
+          <Avatar
+            firstName={user?.firstName}
+            lastName={user?.lastName}
+            email={user?.email}
+          />
           <View style={styles.userInfo}>
             {fullName ? (
               <ThemedText style={styles.userName} accessibilityRole="header">
@@ -142,7 +157,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* ── Navigation ───────────────────────────────────────────── */}
+        {/* Carte navigation */}
         <View style={styles.card}>
           <NavRow
             label={t('profile.preferences')}
@@ -151,9 +166,10 @@ export default function ProfileScreen() {
             onPress={() => router.push('/preferences')}
           />
           <Separator />
-          {/* Langue */}
           <View style={styles.navRow} accessibilityRole="none">
-            <ThemedText style={styles.navRowLabel}>{t('common.language')}</ThemedText>
+            <ThemedText style={styles.navRowLabel}>
+              {t('common.language')}
+            </ThemedText>
             <LanguagePicker />
           </View>
           <Separator />
@@ -175,7 +191,7 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* ── Actions ──────────────────────────────────────────────── */}
+        {/* Se déconnecter */}
         <TouchableOpacity
           onPress={signOut}
           style={styles.signOutBtn}
@@ -183,9 +199,12 @@ export default function ProfileScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('profile.signOut')}
         >
-          <ThemedText style={styles.signOutLabel}>{t('profile.signOut')}</ThemedText>
+          <ThemedText style={styles.signOutLabel}>
+            {t('profile.signOut')}
+          </ThemedText>
         </TouchableOpacity>
 
+        {/* Supprimer le compte */}
         <TouchableOpacity
           onPress={() => setShowConfirm(true)}
           style={styles.deleteBtn}
@@ -194,24 +213,25 @@ export default function ProfileScreen() {
           accessibilityLabel={t('profile.deleteAccount')}
           accessibilityHint="Cette action est irréversible"
         >
-          <ThemedText style={styles.deleteBtnLabel}>{t('profile.deleteAccount')}</ThemedText>
+          <ThemedText style={styles.deleteBtnLabel}>
+            {t('profile.deleteAccount')}
+          </ThemedText>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* ── Modal de confirmation ──────────────────────────────────── */}
+      {/* Modal de confirmation */}
       <Modal
         visible={showConfirm}
         transparent
         animationType="fade"
         statusBarTranslucent
         accessibilityViewIsModal
-        onRequestClose={() => { if (!deleting) setShowConfirm(false); }}
+        onRequestClose={() => {
+          if (!deleting) setShowConfirm(false);
+        }}
       >
         <View style={styles.overlay}>
-          <View
-            style={styles.dialog}
-            accessibilityRole="none"
-          >
+          <View style={styles.dialog}>
             <ThemedText style={styles.dialogTitle} accessibilityRole="header">
               {t('profile.deleteAccountTitle')}
             </ThemedText>
@@ -220,7 +240,6 @@ export default function ProfileScreen() {
               {t('profile.deleteAccountMsg')}
             </ThemedText>
 
-            {/* Erreur — annoncée aux lecteurs d'écran */}
             {errorMsg ? (
               <ThemedText
                 style={styles.dialogError}
@@ -231,18 +250,23 @@ export default function ProfileScreen() {
               </ThemedText>
             ) : null}
 
-            {/* Bouton confirmer */}
             <TouchableOpacity
               onPress={handleDeleteAccount}
               disabled={deleting}
-              style={[styles.dialogConfirm, deleting && styles.dialogBtnDisabled]}
+              style={[
+                styles.dialogConfirm,
+                deleting && styles.dialogBtnDisabled,
+              ]}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={t('profile.deleteAccountConfirm')}
               accessibilityState={{ disabled: deleting, busy: deleting }}
             >
               {deleting ? (
-                <ActivityIndicator color={Colors.white} accessibilityLabel="Suppression en cours" />
+                <ActivityIndicator
+                  color={Colors.white}
+                  accessibilityLabel="Suppression en cours"
+                />
               ) : (
                 <ThemedText style={styles.dialogConfirmLabel}>
                   {t('profile.deleteAccountConfirm')}
@@ -250,11 +274,16 @@ export default function ProfileScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Bouton annuler */}
             <TouchableOpacity
-              onPress={() => { setShowConfirm(false); setErrorMsg(null); }}
+              onPress={() => {
+                setShowConfirm(false);
+                setErrorMsg(null);
+              }}
               disabled={deleting}
-              style={[styles.dialogCancel, deleting && styles.dialogBtnDisabled]}
+              style={[
+                styles.dialogCancel,
+                deleting && styles.dialogBtnDisabled,
+              ]}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={t('profile.deleteAccountCancel')}
@@ -282,7 +311,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
 
-  // Zone utilisateur
+  // Utilisateur
   userSection: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -311,6 +340,7 @@ const styles = StyleSheet.create({
     color: Colors.text,
     lineHeight: 24,
   },
+  // Colors.textSecondary #6B7280 = 4.83:1 sur fond blanc → conforme RGAA AA
   userEmail: {
     fontSize: 14,
     color: Colors.textSecondary,
@@ -322,7 +352,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Carte navigation
+  // Navigation
   card: {
     backgroundColor: Colors.white,
     borderRadius: Radius.lg,
@@ -357,7 +387,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
   },
 
-  // Bouton Se déconnecter
+  // Boutons
   signOutBtn: {
     backgroundColor: Colors.primary,
     borderRadius: Radius.lg,
@@ -372,8 +402,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-
-  // Bouton Supprimer le compte (outline danger, RGAA-conforme)
   deleteBtn: {
     borderWidth: 1.5,
     borderColor: DANGER_ACCESSIBLE,
@@ -390,7 +418,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Modal overlay
+  // Modal
   overlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
