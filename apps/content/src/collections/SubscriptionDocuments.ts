@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdminField, isAuthenticated, ownedBy } from '../access/roles'
+import { isAdminField, isSAVAdminField, isAuthenticated, ownedBy } from '../access/roles'
 
 /**
  * Documents fournis pour une souscription (pièce d'identité, photo, justificatifs…).
@@ -14,8 +14,9 @@ export const SubscriptionDocuments: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'type',
-    defaultColumns: ['type', 'status', 'subscription', 'owner'],
+    defaultColumns: ['type', 'status', 'subscription', 'owner', 'updatedAt'],
     group: 'Abonnements',
+    description: "Documents déposés par les usagers pour valider leur souscription.",
   },
   access: {
     create: isAuthenticated,
@@ -69,14 +70,14 @@ export const SubscriptionDocuments: CollectionConfig = {
         { label: 'Validé', value: 'validated' },
         { label: 'Refusé', value: 'refused' },
       ],
-      // Seul le staff valide / refuse
-      access: { create: isAdminField, update: isAdminField },
+      // Admin et comutitres_manager (SAV) peuvent valider ou refuser ; developer lecture seule
+      access: { create: isSAVAdminField, update: isSAVAdminField },
     },
     {
       name: 'refusalReason',
       type: 'text',
-      admin: { description: 'Motif affiché à l’usager en cas de refus' },
-      access: { create: isAdminField, update: isAdminField },
+      admin: { description: "Motif affiché à l'usager en cas de refus" },
+      access: { create: isSAVAdminField, update: isSAVAdminField },
     },
   ],
 }

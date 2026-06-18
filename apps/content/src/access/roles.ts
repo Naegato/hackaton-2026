@@ -6,19 +6,26 @@ const STAFF_ROLES = ['developer', 'admin', 'comutitres_manager']
 
 const getUser = (req: { user?: unknown }): WithRoles => req.user as WithRoles
 
-/** admin uniquement (écriture sur les collections métier). */
+/** admin uniquement (écriture privilégiée sur les collections métier). */
 export const isAdminFromUser = (user: WithRoles): boolean =>
   user?.roles?.includes('admin') ?? false
+
+/** admin + comutitres_manager : validation des documents de souscription (SAV). */
+export const isSAVAdminFromUser = (user: WithRoles): boolean =>
+  user?.roles?.some((r) => ['admin', 'comutitres_manager'].includes(r)) ?? false
 
 /** developer + admin + comutitres_manager (accès SAV). */
 export const isStaffFromUser = (user: WithRoles): boolean =>
   user?.roles?.some((r) => STAFF_ROLES.includes(r)) ?? false
 
-/** Accès collection réservé aux super-admins (developer + admin). */
+/** Accès collection réservé aux admins. */
 export const isAdmin: Access = ({ req }) => isAdminFromUser(getUser(req))
 
-/** Accès champ (field-level) réservé aux super-admins. */
+/** Accès champ réservé aux admins (admin seulement). */
 export const isAdminField: FieldAccess = ({ req }) => isAdminFromUser(getUser(req))
+
+/** Accès champ réservé au SAV : admin + comutitres_manager peuvent valider/refuser des documents. */
+export const isSAVAdminField: FieldAccess = ({ req }) => isSAVAdminFromUser(getUser(req))
 
 /** Accès réservé aux utilisateurs connectés. */
 export const isAuthenticated: Access = ({ req }) => Boolean(getUser(req))

@@ -52,11 +52,14 @@ export default async function Dashboard() {
   const isSuperAdmin = roles.some((r) => ['developer', 'admin'].includes(r))
   const isSAV = roles.includes('comutitres_manager') && !isSuperAdmin
 
-  const [activeSubs, pendingTransfers, totalUsers, cancelledSubs] = await Promise.all([
+  const [activeSubs, pendingTransfers, totalUsers, cancelledSubs, pendingDocs, pendingSubs, openTickets] = await Promise.all([
     payload.count({ collection: 'subscriptions', where: { status: { equals: 'active' } } }),
     payload.count({ collection: 'transfer-requests', where: { status: { equals: 'pending' } } }),
     isSuperAdmin ? payload.count({ collection: 'users' }) : Promise.resolve({ totalDocs: 0 }),
     payload.count({ collection: 'subscriptions', where: { status: { equals: 'cancelled' } } }),
+    payload.count({ collection: 'subscription-documents', where: { status: { equals: 'pending' } } }),
+    payload.count({ collection: 'subscriptions', where: { status: { equals: 'pending' } } }),
+    payload.count({ collection: 'tickets' as 'users', where: { status: { in: ['open', 'in-progress'] } } }),
   ])
 
   const roleLabels: Record<string, string> = {
@@ -80,8 +83,14 @@ export default async function Dashboard() {
       {/* KPIs SAV — visibles par tous les staff */}
       <Section title="Abonnements">
         <KpiCard label="Actifs" value={activeSubs.totalDocs} accent="#16a34a" />
+        <KpiCard label="En attente de validation" value={pendingSubs.totalDocs} accent="#d97706" />
         <KpiCard label="Résiliés" value={cancelledSubs.totalDocs} accent="#dc2626" />
+      </Section>
+
+      <Section title="Documents à traiter">
+        <KpiCard label="Documents en attente" value={pendingDocs.totalDocs} accent="#7c3aed" />
         <KpiCard label="Transferts en attente" value={pendingTransfers.totalDocs} accent="#d97706" />
+        <KpiCard label="Tickets ouverts" value={openTickets.totalDocs} accent="#0891b2" />
       </Section>
 
       {/* KPIs réservés developer/admin */}
@@ -97,8 +106,10 @@ export default async function Dashboard() {
           Accès rapides
         </h2>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <QuickLink href="/admin/collections/subscriptions" label="Gérer les abonnements" />
-          <QuickLink href="/admin/collections/transfer-requests" label="Demandes de transfert" />
+          <QuickLink href="/admin/dossiers" label="Dossiers clients" />
+          <QuickLink href="/admin/collections/subscriptions" label="Abonnements" />
+          <QuickLink href="/admin/collections/tickets" label="Tickets support" />
+          <QuickLink href="/admin/collections/transfer-requests" label="Transferts" />
           {isSuperAdmin && <QuickLink href="/admin/collections/users" label="Utilisateurs" />}
           {isSuperAdmin && <QuickLink href="/admin/collections/plans" label="Catalogue d'offres" />}
         </div>

@@ -171,6 +171,11 @@ export function me(): Promise<MeResponse> {
   return request<MeResponse>('/api/users/me', { method: 'GET' }, true);
 }
 
+/** Supprime définitivement le compte courant (RGPD) — cascade sur abonnements et transferts. */
+export function deleteAccount(): Promise<{ message: string }> {
+  return request<{ message: string }>('/api/delete-account', { method: 'DELETE' }, true);
+}
+
 /** Met à jour le compte courant (préférences, onboardingCompleted…). */
 export function updateUser(
   id: string,
@@ -440,4 +445,18 @@ export function askAssistant(message: string, screen?: string): Promise<Assistan
     method: 'POST',
     body: JSON.stringify({ message, screen }),
   });
+}
+
+export type TicketCategory = 'subscription' | 'document' | 'lost-card' | 'transfer' | 'billing' | 'other';
+
+/** Crée un ticket de support. */
+export function createTicket(data: {
+  category: TicketCategory;
+  subject: string;
+  message: string;
+}): Promise<{ doc: { id: string } }> {
+  return request('/api/tickets', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, true);
 }
