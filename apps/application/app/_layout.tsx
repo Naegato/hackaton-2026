@@ -74,6 +74,7 @@ function RootNavigator() {
         <Stack.Screen name="subscribe/[slug]" options={{ headerShown: true }} />
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="legal/[slug]" options={{ headerShown: false }} />
+        <Stack.Screen name="subscription/[id]" options={{ headerShown: false }} />
         {/* `subscribe` est un navigateur imbriqué (subscribe/_layout) qui gère son propre header → on masque celui de la pile racine */}
         <Stack.Screen name="subscribe" options={{ headerShown: false }} />
         <Stack.Screen name="relative" options={{ headerShown: true, title: 'Abonnement pour un proche' }} />
