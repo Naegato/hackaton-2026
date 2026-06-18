@@ -71,8 +71,11 @@ export function AssistantSheet({ visible, onClose }: Props) {
     return () => { show.remove(); hide.remove(); };
   }, []);
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     if (visible) {
+      setMounted(true);
       if (messages.length === 0) {
         setMessages([{
           id: 'greeting',
@@ -89,7 +92,7 @@ export function AssistantSheet({ visible, onClose }: Props) {
       Animated.parallel([
         Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 280, easing: Easing.in(Easing.ease), useNativeDriver: true }),
         Animated.timing(backdropOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
-      ]).start();
+      ]).start(() => setMounted(false));
     }
   }, [visible]);
 
@@ -122,8 +125,6 @@ export function AssistantSheet({ visible, onClose }: Props) {
     }
   }
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { if (visible) setMounted(true); }, [visible]);
   if (!mounted) return null;
 
   return (
