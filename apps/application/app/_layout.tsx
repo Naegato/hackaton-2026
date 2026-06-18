@@ -76,6 +76,7 @@ function RootNavigator() {
         <Stack.Screen name="relative" options={{ headerShown: true, title: 'Abonnement pour un proche' }} />
         <Stack.Screen name="transfer" options={{ headerShown: true, title: 'Transférer un abonnement' }} />
         <Stack.Screen name="subscription-holder" options={{ headerShown: true, title: 'Informations du titulaire' }} />
+        <Stack.Screen name="notifications" options={{ presentation: 'modal', title: 'Notifications' }} />
       </Stack.Protected>
 
       {/* Connecté mais 1ʳᵉ fois → questionnaire */}

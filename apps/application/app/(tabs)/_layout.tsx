@@ -6,6 +6,7 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { AssistantFab } from '@/components/assistant/AssistantFab';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useLocale } from '@/context/locale-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -50,6 +51,7 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+      <NotificationBell />
       <AssistantFab />
     </View>
   );

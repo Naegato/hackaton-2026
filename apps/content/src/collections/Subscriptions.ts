@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdminField, isAuthenticated, isStaffFromUser, ownedBy } from '../access/roles'
+import { createNotification } from '../lib/notifications'
 
 /**
  * Abonnement réel géré par un compte.
@@ -33,6 +34,31 @@ export const Subscriptions: CollectionConfig = {
           data.managedBy = (req.user as { id?: string }).id
         }
         return data
+      },
+    ],
+    afterChange: [
+      // Notifie le gestionnaire quand la date de fin est repoussée (renouvellement)
+      async ({ doc, previousDoc, req, operation }) => {
+        if (
+          operation === 'update' &&
+          doc.endDate &&
+          previousDoc?.endDate &&
+          new Date(doc.endDate).getTime() > new Date(previousDoc.endDate).getTime()
+        ) {
+          const managedById =
+            doc.managedBy && typeof doc.managedBy === 'object' ? doc.managedBy.id : doc.managedBy
+          await createNotification({
+            payload: req.payload,
+            req,
+            userId: String(managedById),
+            type: 'RENEWAL',
+            title: 'Abonnement renouvelé',
+            message: 'Votre abonnement a été renouvelé avec une nouvelle date de fin.',
+            metadata: { subscriptionId: doc.id, endDate: doc.endDate },
+            sendEmail: true,
+          })
+        }
+        return doc
       },
     ],
   },

@@ -325,6 +325,12 @@ const fr: Dictionary = {
   'assistant.topics.account': 'Mon compte',
   'assistant.topics.pricing': 'Tarifs & éligibilité',
   'assistant.topics.support': 'Contacter le SAV',
+
+  'notifications.title': 'Notifications',
+  'notifications.markAllRead': 'Tout marquer comme lu',
+  'notifications.empty': "Vous n'avez aucune notification.",
+  'notifications.loadError': 'Impossible de charger les notifications.',
+  'notifications.delete': 'Supprimer',
 };
 
 const en: Dictionary = {
@@ -629,6 +635,12 @@ const en: Dictionary = {
   'assistant.topics.account': 'My account',
   'assistant.topics.pricing': 'Pricing & eligibility',
   'assistant.topics.support': 'Contact support',
+
+  'notifications.title': 'Notifications',
+  'notifications.markAllRead': 'Mark all as read',
+  'notifications.empty': 'You have no notifications.',
+  'notifications.loadError': 'Unable to load notifications.',
+  'notifications.delete': 'Delete',
 };
 
 const es: Dictionary = {
@@ -933,6 +945,12 @@ const es: Dictionary = {
   'assistant.topics.account': 'Mi cuenta',
   'assistant.topics.pricing': 'Tarifas y elegibilidad',
   'assistant.topics.support': 'Contactar soporte',
+
+  'notifications.title': 'Notificaciones',
+  'notifications.markAllRead': 'Marcar todo como leído',
+  'notifications.empty': 'No tienes notificaciones.',
+  'notifications.loadError': 'No se pudieron cargar las notificaciones.',
+  'notifications.delete': 'Eliminar',
 };
 
 const zh: Dictionary = {
@@ -1237,6 +1255,12 @@ const zh: Dictionary = {
   'assistant.topics.account': '我的账户',
   'assistant.topics.pricing': '价格与资格',
   'assistant.topics.support': '联系客服',
+
+  'notifications.title': '通知',
+  'notifications.markAllRead': '全部标记为已读',
+  'notifications.empty': '您没有任何通知。',
+  'notifications.loadError': '无法加载通知。',
+  'notifications.delete': '删除',
 };
 
 export const translations: Record<LocaleCode, Dictionary> = { fr, en, es, zh };

@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
 import { isAdmin, isAuthenticated, isStaffFromUser, ownedByAny } from '../access/roles'
+import { createNotification } from '../lib/notifications'
 
 /** Normalise une valeur relationnelle (id string ou objet peuplé) en id. */
 const toId = (value: unknown): string => {
@@ -178,11 +179,26 @@ export const TransferRequests: CollectionConfig = {
     ],
     afterChange: [
       async ({ doc, req, operation }) => {
-        // Notifie le destinataire par email à la création de la demande (best-effort : n'interrompt pas la création)
+        // Notifie le destinataire à la création de la demande : notification in-app +
+        // email dédié (best-effort : un échec d'envoi n'interrompt pas la création).
         if (operation !== 'create') return doc
+
+        const fromName = String(doc.fromName || 'Un utilisateur')
+        const planName = String(doc.planName || 'un abonnement')
+
+        await createNotification({
+          payload: req.payload,
+          req,
+          userId: toId(doc.toUser),
+          type: 'TRANSFER_RECEIVED',
+          title: "Demande de transfert d'abonnement",
+          message: `${fromName} souhaite vous transférer l'abonnement ${planName}.`,
+          metadata: { transferRequestId: doc.id, subscriptionId: toId(doc.subscription) },
+          // Email envoyé ci-dessous avec un template dédié, pas le template générique des notifications.
+          sendEmail: false,
+        })
+
         try {
-          const fromName = String(doc.fromName || 'Un utilisateur')
-          const planName = String(doc.planName || 'un abonnement')
           const base = (process.env.APP_PUBLIC_URL || 'http://localhost:8081').replace(/\/$/, '')
 
           await req.payload.sendEmail({
@@ -237,6 +253,17 @@ export const TransferRequests: CollectionConfig = {
                 },
               ],
             },
+          })
+
+          await createNotification({
+            payload: req.payload,
+            req,
+            userId: toId(doc.fromUser),
+            type: 'TRANSFER_SENT',
+            title: 'Transfert finalisé',
+            message: 'Votre transfert d’abonnement a été accepté et finalisé.',
+            metadata: { transferRequestId: doc.id, subscriptionId: subId },
+            sendEmail: true,
           })
         }
         return doc
