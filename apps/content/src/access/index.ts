@@ -20,7 +20,7 @@ export const SUPER_ROLES: Role[] = ['developer', 'admin']
 export const STAFF_ROLES: Role[] = ['developer', 'admin', 'comutitres_manager']
 
 export const hasRole = (user: User | null | undefined, ...roles: Role[]): boolean =>
-  Boolean(user?.roles?.some((role) => roles.includes(role)))
+  Boolean(user?.roles?.some((role) => roles.includes(role as Role)))
 
 export const anyone: Access = () => true
 

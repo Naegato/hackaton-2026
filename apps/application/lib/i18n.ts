@@ -187,6 +187,15 @@ const fr: Dictionary = {
   'common.no': 'Non',
 
   'language.title': 'Choisir la langue',
+
+  'assistant.placeholder': 'Posez votre question…',
+  'assistant.greeting': 'Bonjour ! Je suis LÉIA, votre assistante IDFM. Comment puis-je vous aider ?',
+  'assistant.errorGeneric': 'Une erreur est survenue. Réessayez.',
+  'assistant.seeMore': 'En savoir plus',
+  'assistant.topics.subscriptions': 'Mes abonnements',
+  'assistant.topics.account': 'Mon compte',
+  'assistant.topics.pricing': 'Tarifs & éligibilité',
+  'assistant.topics.support': 'Contacter le SAV',
 };
 
 const en: Dictionary = {
@@ -353,6 +362,15 @@ const en: Dictionary = {
   'common.no': 'No',
 
   'language.title': 'Choose language',
+
+  'assistant.placeholder': 'Ask your question…',
+  'assistant.greeting': 'Hello! I\'m LÉIA, your IDFM assistant. How can I help you?',
+  'assistant.errorGeneric': 'An error occurred. Please try again.',
+  'assistant.seeMore': 'Learn more',
+  'assistant.topics.subscriptions': 'My subscriptions',
+  'assistant.topics.account': 'My account',
+  'assistant.topics.pricing': 'Pricing & eligibility',
+  'assistant.topics.support': 'Contact support',
 };
 
 const es: Dictionary = {
@@ -519,6 +537,15 @@ const es: Dictionary = {
   'common.no': 'No',
 
   'language.title': 'Elegir idioma',
+
+  'assistant.placeholder': 'Haz tu pregunta…',
+  'assistant.greeting': '¡Hola! Soy LÉIA, tu asistente IDFM. ¿En qué puedo ayudarte?',
+  'assistant.errorGeneric': 'Se produjo un error. Inténtalo de nuevo.',
+  'assistant.seeMore': 'Saber más',
+  'assistant.topics.subscriptions': 'Mis abonos',
+  'assistant.topics.account': 'Mi cuenta',
+  'assistant.topics.pricing': 'Tarifas y elegibilidad',
+  'assistant.topics.support': 'Contactar soporte',
 };
 
 const zh: Dictionary = {
@@ -685,6 +712,15 @@ const zh: Dictionary = {
   'common.no': '否',
 
   'language.title': '选择语言',
+
+  'assistant.placeholder': '请输入您的问题…',
+  'assistant.greeting': '您好！我是 LÉIA，您的 IDFM 助手。有什么可以帮您的吗？',
+  'assistant.errorGeneric': '发生错误，请重试。',
+  'assistant.seeMore': '了解更多',
+  'assistant.topics.subscriptions': '我的订阅',
+  'assistant.topics.account': '我的账户',
+  'assistant.topics.pricing': '价格与资格',
+  'assistant.topics.support': '联系客服',
 };
 
 export const translations: Record<LocaleCode, Dictionary> = { fr, en, es, zh };

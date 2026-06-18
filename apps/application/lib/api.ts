@@ -176,3 +176,17 @@ export function verifyPhoto(
     true,
   );
 }
+
+export type AssistantResponse = {
+  answer: string;
+  suggestions: string[];
+  cta: { label: string; url: string } | null;
+};
+
+/** Envoie un message à l'assistant LÉIA. */
+export function askAssistant(message: string, screen?: string): Promise<AssistantResponse> {
+  return request<AssistantResponse>('/api/assistant', {
+    method: 'POST',
+    body: JSON.stringify({ message, screen }),
+  });
+}
