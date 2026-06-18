@@ -260,6 +260,96 @@ export async function hasCurrentSubscription(): Promise<boolean> {
   return (res.totalDocs ?? 0) > 0;
 }
 
+export type TransferStatus = 'pending' | 'accepted' | 'declined' | 'cancelled';
+export type TransferRequest = {
+  id: string;
+  status: TransferStatus;
+  toEmail: string;
+  fromUserId: string | null;
+  toUserId: string | null;
+  subscriptionId: string | null;
+  // Champs dénormalisés (lisibles par les deux parties)
+  fromName: string;
+  planName: string;
+  holderName: string;
+  createdAt?: string;
+};
+
+const relId = (v: unknown): string | null =>
+  v == null ? null : typeof v === 'object' && 'id' in v ? String((v as { id: string }).id) : String(v);
+
+/** Crée une demande de transfert d'un abonnement vers le compte identifié par `toEmail` (avec acceptation). */
+export function createTransferRequest(input: {
+  subscription: string;
+  toEmail: string;
+}): Promise<{ doc: { id: string } }> {
+  return request<{ doc: { id: string } }>(
+    '/api/transfer-requests',
+    { method: 'POST', body: JSON.stringify(input) },
+    true,
+  );
+}
+
+/** Liste les demandes de transfert « en attente » qui me concernent (émises ou reçues). */
+export async function listMyPendingTransfers(): Promise<TransferRequest[]> {
+  const res = await request<{ docs: Record<string, unknown>[] }>(
+    '/api/transfer-requests?where[status][equals]=pending&depth=0&limit=50&sort=-createdAt',
+    { method: 'GET' },
+    true,
+  );
+  return res.docs.map((d) => ({
+    id: String(d.id),
+    status: d.status as TransferStatus,
+    toEmail: String(d.toEmail ?? ''),
+    fromUserId: relId(d.fromUser),
+    toUserId: relId(d.toUser),
+    subscriptionId: relId(d.subscription),
+    fromName: String(d.fromName ?? ''),
+    planName: String(d.planName ?? ''),
+    holderName: String(d.holderName ?? ''),
+    createdAt: d.createdAt as string | undefined,
+  }));
+}
+
+/** Le destinataire accepte ou refuse une demande de transfert. */
+export function respondTransfer(id: string, status: 'accepted' | 'declined'): Promise<unknown> {
+  return request(`/api/transfer-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }, true);
+}
+
+/** Lit les informations du titulaire d'un abonnement (lisible par le gestionnaire courant). */
+export async function getSubscriptionHolder(
+  id: string,
+): Promise<{ holderFirstName: string; holderLastName: string; planName: string }> {
+  const d = await request<{
+    holderFirstName?: string | null;
+    holderLastName?: string | null;
+    plan?: { name?: string } | string | null;
+  }>(`/api/subscriptions/${id}?depth=1`, { method: 'GET' }, true);
+  const planName = d.plan && typeof d.plan === 'object' ? d.plan.name ?? '' : '';
+  return {
+    holderFirstName: d.holderFirstName ?? '',
+    holderLastName: d.holderLastName ?? '',
+    planName,
+  };
+}
+
+/** Met à jour les informations du titulaire d'un abonnement (par le gestionnaire courant). */
+export function updateSubscriptionHolder(
+  id: string,
+  data: { holderFirstName: string; holderLastName: string },
+): Promise<unknown> {
+  return request(`/api/subscriptions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, true);
+}
+
+/** L'émetteur annule une demande de transfert en attente. */
+export function cancelTransfer(id: string): Promise<unknown> {
+  return request(
+    `/api/transfer-requests/${id}`,
+    { method: 'PATCH', body: JSON.stringify({ status: 'cancelled' }) },
+    true,
+  );
+}
+
 /** Liste tous les documents du compte courant (tous abonnements confondus). */
 export async function listAllMyDocuments(): Promise<SubscriptionDoc[]> {
   const res = await request<{ docs: SubscriptionDoc[] }>(

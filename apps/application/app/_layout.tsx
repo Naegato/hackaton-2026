@@ -74,6 +74,8 @@ function RootNavigator() {
         {/* `subscribe` est un navigateur imbriqué (subscribe/_layout) qui gère son propre header → on masque celui de la pile racine */}
         <Stack.Screen name="subscribe" options={{ headerShown: false }} />
         <Stack.Screen name="relative" options={{ headerShown: true, title: 'Abonnement pour un proche' }} />
+        <Stack.Screen name="transfer" options={{ headerShown: true, title: 'Transférer un abonnement' }} />
+        <Stack.Screen name="subscription-holder" options={{ headerShown: true, title: 'Informations du titulaire' }} />
       </Stack.Protected>
 
       {/* Connecté mais 1ʳᵉ fois → questionnaire */}
