@@ -12,7 +12,7 @@
 #                     GitHub → Settings → Actions → Runners → New self-hosted runner
 set -euo pipefail
 
-RUNNER_VERSION="2.319.1"
+RUNNER_VERSION="2.325.0"
 RUNNER_DIR="/opt/github-runner"
 RUNNER_USER="runner"
 
@@ -83,9 +83,14 @@ if [[ ! -f "$RUNNER_DIR/run.sh" ]]; then
   chown -R "$RUNNER_USER:$RUNNER_USER" "$RUNNER_DIR"
 fi
 
-# Install runner OS dependencies (libicu / .NET 6 runtime required by the agent)
+# Install runner OS dependencies.
+# The bundled installdependencies.sh only knows older package names (libicu72,
+# libssl1.1, …). On Debian 13 (trixie) those packages are libicu74 / libssl3.
+# We pre-install the correct versions for the running Debian release, then let
+# the bundled script run (it exits 0 even when some packages are not found).
 echo "==> Installing runner dependencies..."
-"$RUNNER_DIR/bin/installdependencies.sh"
+apt-get install -y --no-install-recommends libicu-dev libssl-dev 2>/dev/null || true
+"$RUNNER_DIR/bin/installdependencies.sh" || true
 
 # Configure runner
 sudo -u "$RUNNER_USER" "$RUNNER_DIR/config.sh" \
