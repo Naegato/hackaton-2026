@@ -73,6 +73,7 @@ export interface Config {
     subscriptions: Subscription;
     'subscription-documents': SubscriptionDocument;
     'transfer-requests': TransferRequest;
+    tickets: Ticket;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     subscriptions: SubscriptionsSelect<false> | SubscriptionsSelect<true>;
     'subscription-documents': SubscriptionDocumentsSelect<false> | SubscriptionDocumentsSelect<true>;
     'transfer-requests': TransferRequestsSelect<false> | TransferRequestsSelect<true>;
+    tickets: TicketsSelect<false> | TicketsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -332,6 +334,8 @@ export interface Subscription {
   createdAt: string;
 }
 /**
+ * Documents déposés par les usagers pour valider leur souscription.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "subscription-documents".
  */
@@ -342,7 +346,7 @@ export interface SubscriptionDocument {
   type?: ('id' | 'photo' | 'school' | 'income' | 'cmi') | null;
   status?: ('pending' | 'validated' | 'refused') | null;
   /**
-   * Motif affiché à l’usager en cas de refus
+   * Motif affiché à l'usager en cas de refus
    */
   refusalReason?: string | null;
   updatedAt: string;
@@ -396,6 +400,29 @@ export interface TransferRequest {
   createdAt: string;
 }
 /**
+ * Demandes de support soumises par les utilisateurs via l'application.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets".
+ */
+export interface Ticket {
+  id: string;
+  /**
+   * Utilisateur ayant soumis le ticket.
+   */
+  from?: (string | null) | User;
+  category: 'subscription' | 'document' | 'lost-card' | 'transfer' | 'billing' | 'other';
+  subject: string;
+  message: string;
+  status?: ('open' | 'in-progress' | 'resolved' | 'closed') | null;
+  /**
+   * Réponse visible par l'utilisateur dans l'application.
+   */
+  adminResponse?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -442,6 +469,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'transfer-requests';
         value: string | TransferRequest;
+      } | null)
+    | ({
+        relationTo: 'tickets';
+        value: string | Ticket;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -635,6 +666,20 @@ export interface TransferRequestsSelect<T extends boolean = true> {
   fromName?: T;
   planName?: T;
   holderName?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tickets_select".
+ */
+export interface TicketsSelect<T extends boolean = true> {
+  from?: T;
+  category?: T;
+  subject?: T;
+  message?: T;
+  status?: T;
+  adminResponse?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -170,7 +170,7 @@ export default function WalletScreen() {
         planName={sub.plan?.name ?? '—'}
         statusLabel={t(`subStatus.${displayStatus}` as TranslationKey)}
         statusColor={SUB_STATUS_COLOR[displayStatus] ?? Colors.textSecondary}
-        onPress={() => sub.plan?.slug && router.push(`/subscribe/${sub.plan.slug}`)}
+        onPress={() => router.push(`/subscription/${sub.id}`)}
       />
     );
   }

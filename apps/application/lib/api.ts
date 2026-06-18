@@ -171,7 +171,12 @@ export function me(): Promise<MeResponse> {
   return request<MeResponse>('/api/users/me', { method: 'GET' }, true);
 }
 
-/** Met à jour le compte courant (identité, préférences, onboardingCompleted…). */
+/** Supprime définitivement le compte courant (RGPD) — cascade sur abonnements et transferts. */
+export function deleteAccount(): Promise<{ message: string }> {
+  return request<{ message: string }>('/api/delete-account', { method: 'DELETE' }, true);
+}
+
+/** Met à jour le compte courant (préférences, onboardingCompleted…). */
 export function updateUser(
   id: string,
   data: { firstName?: string; lastName?: string; preferences?: Preferences; onboardingCompleted?: boolean },
@@ -490,4 +495,50 @@ export function askAssistant(
     },
     true,
   );
+}
+
+export type TicketCategory = 'subscription' | 'document' | 'lost-card' | 'transfer' | 'billing' | 'other';
+
+/** Crée un ticket de support. */
+export function createTicket(data: {
+  category: TicketCategory;
+  subject: string;
+  message: string;
+}): Promise<{ doc: { id: string } }> {
+  return request('/api/tickets', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, true);
+}
+
+// ---------------------------------------------------------------------------
+// Pages légales (globals Payload — accès public)
+// ---------------------------------------------------------------------------
+
+export type LexicalNode = {
+  type: string;
+  text?: string;
+  format?: number; // bitmask : 1=gras, 2=italique, 4=barré, 8=souligné
+  tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  listType?: 'bullet' | 'number';
+  value?: number;
+  children?: LexicalNode[];
+};
+
+export type LegalPage = {
+  title?: string | null;
+  content?: { root: { children: LexicalNode[] } } | null;
+};
+
+export type LegalSlug =
+  | 'terms'
+  | 'sales-terms'
+  | 'privacy'
+  | 'legal-notice'
+  | 'faq'
+  | 'help';
+
+/** Récupère une page globale Payload (public, sans auth). */
+export function fetchLegalPage(slug: string, locale = 'fr'): Promise<LegalPage> {
+  return request<LegalPage>(`/api/globals/${slug}?locale=${locale}&depth=0`, { method: 'GET' });
 }

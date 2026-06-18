@@ -12,11 +12,13 @@ import { Plans } from './collections/Plans'
 import { Subscriptions } from './collections/Subscriptions'
 import { SubscriptionDocuments } from './collections/SubscriptionDocuments'
 import { TransferRequests } from './collections/TransferRequests'
+import { Tickets } from './collections/Tickets'
 import { pageGlobals } from './globals/Pages'
 import { defaultLocale, locales } from './locales'
 import { googleOAuthCallback, googleOAuthRedirect } from './endpoints/oauth-google'
 import { verifyPhoto } from './endpoints/verify-photo'
 import { assistantEndpoint } from './endpoints/assistant'
+import { deleteAccountEndpoint } from './endpoints/delete-account'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -33,13 +35,17 @@ export default buildConfig({
           Component: './components/Dashboard',
           path: '/',
         },
+        dossiers: {
+          Component: './components/DossiersView',
+          path: '/dossiers',
+        },
       },
     },
     meta: {
       titleSuffix: '— IDF Mobilité Admin',
     },
   },
-  collections: [Users, Media, Plans, Subscriptions, SubscriptionDocuments, TransferRequests],
+  collections: [Users, Media, Plans, Subscriptions, SubscriptionDocuments, TransferRequests, Tickets],
   globals: pageGlobals,
   // Localization : le contenu marqué `localized` est stocké par langue.
   // L'API renvoie la bonne version via ?locale=<code> ; fallback sur le français si traduction absente.
@@ -59,6 +65,7 @@ export default buildConfig({
     googleOAuthCallback,
     verifyPhoto,
     assistantEndpoint,
+    deleteAccountEndpoint,
   ],
   editor: lexicalEditor(),
   // CORS : origines autorisées à appeler l'API.
