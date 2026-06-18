@@ -80,7 +80,8 @@ describe('Auth', () => {
       const userEmail = email('login')
       await payload.create({
         collection: 'users',
-        data: { email: userEmail, password: 'Password123!' },
+        // _verified: true => simule un compte déjà vérifié (la connexion est sinon bloquée tant que l'email n'est pas confirmé)
+        data: { email: userEmail, password: 'Password123!', _verified: true },
       })
 
       const result = await payload.login({
@@ -96,7 +97,8 @@ describe('Auth', () => {
       const userEmail = email('badpass')
       await payload.create({
         collection: 'users',
-        data: { email: userEmail, password: 'Password123!' },
+        // _verified: true => le test doit échouer pour mauvais mot de passe, pas pour email non vérifié
+        data: { email: userEmail, password: 'Password123!', _verified: true },
       })
 
       await expect(
@@ -113,7 +115,8 @@ describe('Auth', () => {
       const userEmail = email('reset')
       await payload.create({
         collection: 'users',
-        data: { email: userEmail, password: 'OldPassword123!' },
+        // _verified: true => simule un compte déjà vérifié (la connexion est sinon bloquée tant que l'email n'est pas confirmé)
+        data: { email: userEmail, password: 'OldPassword123!', _verified: true },
       })
 
       // disableEmail: true => pas d'envoi SMTP, le token est retourné directement
