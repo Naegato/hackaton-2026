@@ -4,6 +4,7 @@ import {
   canAccessAdminPanel,
   DEFAULT_ROLE,
   isAdminOrSelf,
+  isAdminOnlyOrSelf,
   isSuperFieldLevel,
   ROLES,
 } from '@/access'
@@ -12,6 +13,9 @@ export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     useAsTitle: 'email',
+    defaultColumns: ['email', 'firstName', 'lastName', 'roles', 'onboardingCompleted', 'createdAt'],
+    group: 'Utilisateurs',
+    description: 'Comptes utilisateurs — gestion des rôles et profils.',
   },
   auth: {
     // Durée de vie du JWT (en secondes). Le client peut le rafraîchir via /api/users/refresh-token
@@ -48,8 +52,8 @@ export const Users: CollectionConfig = {
     // Inscription publique : tout le monde peut créer un compte
     create: () => true,
     read: isAdminOrSelf,
-    update: isAdminOrSelf,
-    delete: isAdminOrSelf,
+    update: isAdminOnlyOrSelf,
+    delete: isAdminOnlyOrSelf,
     admin: canAccessAdminPanel,
   },
   fields: [

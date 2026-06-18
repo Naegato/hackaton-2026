@@ -1,6 +1,6 @@
 import type { GlobalConfig } from 'payload'
 
-import { anyone, isStaff } from '@/access'
+import { anyone, isAdmin } from '@/access'
 
 /**
  * Fabrique un "global" représentant une page de contenu unique, traduisible.
@@ -13,10 +13,16 @@ const createPageGlobal = (slug: string, label: string): GlobalConfig => ({
   access: {
     // Contenu public : accessible sans authentification
     read: anyone,
-    update: isStaff,
+    // Édition réservée aux developer/admin (CGU, FAQ → responsabilité légale)
+    update: isAdmin,
   },
   admin: {
     group: 'Pages',
+    // Cacher les pages du menu admin pour le SAV (comutitres_manager ne les édite pas)
+    hidden: ({ user }) => {
+      const roles = (user as { roles?: string[] | null } | null)?.roles ?? []
+      return roles.includes('comutitres_manager') && !roles.some((r) => ['developer', 'admin'].includes(r))
+    },
   },
   fields: [
     {

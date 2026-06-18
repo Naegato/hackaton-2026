@@ -143,6 +143,8 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Comptes utilisateurs — gestion des rôles et profils.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
@@ -152,7 +154,7 @@ export interface User {
   authProvider?: ('email' | 'google' | 'apple') | null;
   firstName?: string | null;
   lastName?: string | null;
-  roles?: ('developer' | 'admin' | 'comutitres_manager' | 'payer' | 'cardholder' | 'unsubscribed')[] | null;
+  roles?: ('developer' | 'admin' | 'comutitres_manager' | 'payer' | 'cardholder' | 'unsubscribed' | 'user')[] | null;
   onboardingCompleted?: boolean | null;
   preferences?: {
     birthdate?: string | null;
@@ -186,6 +188,8 @@ export interface User {
   collection: 'users';
 }
 /**
+ * Fichiers et images utilisés dans le catalogue d'offres.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
@@ -205,6 +209,8 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Offres d'abonnement IDFM disponibles à la souscription.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "plans".
  */
@@ -286,6 +292,8 @@ export interface Plan {
   createdAt: string;
 }
 /**
+ * Abonnements IDFM gérés par les comptes utilisateurs.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "subscriptions".
  */
@@ -320,6 +328,8 @@ export interface Subscription {
   createdAt: string;
 }
 /**
+ * Demandes de transfert d'abonnement entre comptes (avec acceptation obligatoire).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "transfer-requests".
  */
