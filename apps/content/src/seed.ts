@@ -1,6 +1,15 @@
 import 'dotenv/config'
-import { getPayload } from 'payload'
+import { writeFileSync } from 'fs'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import { getPayload, type Payload } from 'payload'
 import config from './payload.config.js'
+
+// PNG 1x1 valide, écrit en fichier temporaire pour servir de pièce jointe de démo
+const PLACEHOLDER_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+)
 
 /**
  * Comptes de départ pour le développement / la démo.
@@ -167,6 +176,83 @@ const seedPlans: {
   },
 ]
 
+/**
+ * Abonnements + documents de démo, pour visualiser les différents états de validation :
+ * - camille : un document REFUSÉ (avec motif), un validé, un en attente.
+ * - sofiane : tous les documents VALIDÉS (abonnement actif).
+ */
+async function seedDemoSubscriptions(payload: Payload): Promise<void> {
+  const filePath = join(tmpdir(), 'seed-doc.png')
+  writeFileSync(filePath, PLACEHOLDER_PNG)
+
+  const userByEmail = async (email: string) =>
+    (await payload.find({ collection: 'users', where: { email: { equals: email } }, limit: 1 })).docs[0]
+  const planBySlug = async (slug: string) =>
+    (await payload.find({ collection: 'plans', where: { slug: { equals: slug } }, limit: 1 })).docs[0]
+
+  const camille = await userByEmail('camille@idf.test')
+  const sofiane = await userByEmail('sofiane@idf.test')
+  const imagineR = await planBySlug('imagine-r-etudiant')
+  const navigoMois = await planBySlug('navigo-mois')
+  if (!camille || !sofiane || !imagineR || !navigoMois) return
+
+  // Idempotence : on purge les abonnements/documents existants de ces deux comptes
+  for (const u of [camille, sofiane]) {
+    await payload.delete({ collection: 'subscription-documents', where: { owner: { equals: u.id } } })
+    await payload.delete({ collection: 'subscriptions', where: { managedBy: { equals: u.id } } })
+  }
+
+  const createDoc = (
+    owner: string,
+    subscription: string,
+    type: 'id' | 'photo' | 'school' | 'income' | 'cmi',
+    status: 'pending' | 'validated' | 'refused',
+    refusalReason?: string,
+  ) =>
+    payload.create({
+      collection: 'subscription-documents',
+      data: { owner, subscription, type, status, refusalReason },
+      filePath,
+    })
+
+  // camille — un document refusé
+  const sub1 = await payload.create({
+    collection: 'subscriptions',
+    data: {
+      plan: imagineR.id,
+      managedBy: camille.id,
+      holderFirstName: 'Camille',
+      holderLastName: 'Martin',
+      status: 'pending',
+    },
+  })
+  await createDoc(camille.id, sub1.id, 'id', 'validated')
+  await createDoc(
+    camille.id,
+    sub1.id,
+    'photo',
+    'refused',
+    "Photo trop floue et visage partiellement masqué. Merci de renvoyer une photo nette, de face.",
+  )
+  await createDoc(camille.id, sub1.id, 'school', 'pending')
+
+  // sofiane — tout validé
+  const sub2 = await payload.create({
+    collection: 'subscriptions',
+    data: {
+      plan: navigoMois.id,
+      managedBy: sofiane.id,
+      holderFirstName: 'Sofiane',
+      holderLastName: 'Benali',
+      status: 'active',
+    },
+  })
+  await createDoc(sofiane.id, sub2.id, 'id', 'validated')
+  await createDoc(sofiane.id, sub2.id, 'photo', 'validated')
+
+  payload.logger.info('✓ Abonnements de démo : camille (1 doc refusé), sofiane (tout validé)')
+}
+
 async function seed(): Promise<void> {
   const payload = await getPayload({ config })
 
@@ -190,6 +276,8 @@ async function seed(): Promise<void> {
     await payload.create({ collection: 'plans', data: { ...plan, active: true } })
     payload.logger.info(`✓ Offre créée : ${plan.name} (${plan.price}€)`)
   }
+
+  await seedDemoSubscriptions(payload)
 
   payload.logger.info(`Seed terminé : ${seedUsers.length} comptes, ${seedPlans.length} offres.`)
 }

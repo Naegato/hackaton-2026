@@ -26,9 +26,10 @@ export const Subscriptions: CollectionConfig = {
   hooks: {
     beforeChange: [
       ({ data, req, operation }) => {
-        // À la création, rattache l'abonnement au compte courant (sauf admin qui peut cibler un autre compte)
-        if (operation === 'create' && !isAdminFromUser(req.user as never)) {
-          data.managedBy = (req.user as { id?: string } | null)?.id
+        // À la création par un utilisateur connecté (non admin) : rattache l'abonnement à son compte.
+        // En l'absence de req.user (seed / Local API), on respecte le managedBy fourni.
+        if (operation === 'create' && req.user && !isAdminFromUser(req.user as never)) {
+          data.managedBy = (req.user as { id?: string }).id
         }
         return data
       },
@@ -70,8 +71,9 @@ export const Subscriptions: CollectionConfig = {
     {
       name: 'status',
       type: 'select',
-      defaultValue: 'active',
+      defaultValue: 'pending',
       options: [
+        { label: 'En attente de validation', value: 'pending' },
         { label: 'Actif', value: 'active' },
         { label: 'Expiré', value: 'expired' },
         { label: 'Résilié', value: 'cancelled' },
