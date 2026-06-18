@@ -177,6 +177,8 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  _verified?: boolean | null;
+  _verificationToken?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -330,8 +332,6 @@ export interface Subscription {
   createdAt: string;
 }
 /**
- * Demandes de transfert d'abonnement entre comptes (avec acceptation obligatoire).
- *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "subscription-documents".
  */
@@ -358,6 +358,8 @@ export interface SubscriptionDocument {
   focalY?: number | null;
 }
 /**
+ * Demandes de transfert d'abonnement entre comptes (avec acceptation obligatoire).
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "transfer-requests".
  */
@@ -497,6 +499,8 @@ export interface UsersSelect<T extends boolean = true> {
   resetPasswordExpiration?: T;
   salt?: T;
   hash?: T;
+  _verified?: T;
+  _verificationToken?: T;
   loginAttempts?: T;
   lockUntil?: T;
   sessions?:

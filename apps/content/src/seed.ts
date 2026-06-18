@@ -27,6 +27,14 @@ const seedUsers: {
   firstName?: string
   lastName?: string
   roles: Role[]
+  onboardingCompleted?: boolean
+  // Préférences servant à l'éligibilité / recommandation. `birthdate` en ISO (AAAA-MM-JJ) : l'âge exact compte désormais.
+  preferences?: {
+    birthdate?: string
+    status?: 'student' | 'active' | 'retired' | 'jobseeker' | 'other'
+    usageDaysPerWeek?: number
+    socialBeneficiary?: boolean
+  }
 }[] = [
   {
     email: 'developer@idf.test',
@@ -34,6 +42,7 @@ const seedUsers: {
     firstName: 'Dev',
     lastName: 'IDF',
     roles: ['developer'],
+    onboardingCompleted: true,
   },
   {
     email: 'admin@idf.test',
@@ -41,6 +50,7 @@ const seedUsers: {
     firstName: 'Admin',
     lastName: 'IDF',
     roles: ['admin'],
+    onboardingCompleted: true,
   },
   {
     email: 'comutitres@idf.test',
@@ -48,22 +58,40 @@ const seedUsers: {
     firstName: 'Comutitres',
     lastName: 'Manager',
     roles: ['comutitres_manager'],
+    onboardingCompleted: true,
   },
   {
+    // Étudiante de ~22 ans → cohérent avec son abonnement imagine R Étudiant (éligibilité 18–26 + statut étudiant)
     email: 'camille@idf.test',
     password: 'User1234!',
     firstName: 'Camille',
     lastName: 'Martin',
     roles: ['payer'],
+    onboardingCompleted: true,
+    preferences: {
+      birthdate: '2003-09-14',
+      status: 'student',
+      usageDaysPerWeek: 5,
+      socialBeneficiary: false,
+    },
   },
   {
+    // Actif de ~34 ans, usage quotidien → cohérent avec Navigo Mois
     email: 'sofiane@idf.test',
     password: 'User1234!',
     firstName: 'Sofiane',
     lastName: 'Benali',
     roles: ['cardholder'],
+    onboardingCompleted: true,
+    preferences: {
+      birthdate: '1992-03-08',
+      status: 'active',
+      usageDaysPerWeek: 5,
+      socialBeneficiary: false,
+    },
   },
   {
+    // Compte vierge : pas de préférences ni d'onboarding → sert à démontrer le questionnaire à la 1ʳᵉ connexion
     email: 'nouveau@idf.test',
     password: 'User1234!',
     firstName: 'Nouveau',
@@ -265,7 +293,8 @@ async function seed(): Promise<void> {
 
     await payload.create({
       collection: 'users',
-      data: user,
+      // Comptes de démo : email considéré comme vérifié pour autoriser la connexion immédiate
+      data: { ...user, _verified: true },
     })
 
     payload.logger.info(`✓ Utilisateur créé : ${user.email} (${user.roles.join(', ')})`)

@@ -29,6 +29,8 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  // Email de vérification envoyé : on affiche l'écran « consultez votre boîte mail » au lieu d'entrer dans l'app
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   async function onSubmit() {
     setError(null);
@@ -46,13 +48,15 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
+      const trimmed = email.trim();
       await signUp({
-        email: email.trim(),
+        email: trimmed,
         password,
         firstName: firstName.trim() || undefined,
         lastName: lastName.trim() || undefined,
       });
-      router.replace('/');
+      // Pas de connexion auto : il faut d'abord confirmer l'email
+      setSentTo(trimmed);
     } catch (e) {
       setError(e instanceof Error ? e.message : t('register.errGeneric'));
     } finally {
@@ -71,6 +75,29 @@ export default function RegisterScreen() {
     } finally {
       setGoogleLoading(false);
     }
+  }
+
+  // Écran de confirmation : l'email de vérification vient d'être envoyé
+  if (sentTo) {
+    return (
+      <ThemedView style={styles.flex}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ThemedText type="title">{t('verify.sentTitle')}</ThemedText>
+          <ThemedText style={styles.subtitle}>{t('verify.sentBody')}</ThemedText>
+          <ThemedText type="defaultSemiBold" style={styles.sentEmail}>
+            {sentTo}
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>{t('verify.sentHint')}</ThemedText>
+
+          <Button
+            label={t('verify.goToLogin')}
+            onPress={() => router.replace('/login')}
+            variant="primary"
+            size="lg"
+          />
+        </ScrollView>
+      </ThemedView>
+    );
   }
 
   return (
@@ -183,6 +210,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   subtitle: { marginBottom: 8, opacity: 0.7 },
+  sentEmail: { fontSize: 16 },
   error: { color: '#d33' },
   divider: {
     flexDirection: 'row',

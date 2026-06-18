@@ -145,6 +145,11 @@ export function register(input: {
   });
 }
 
+/** Vérifie l'adresse email via le token reçu par email (active le compte). Débloque ensuite la connexion. */
+export function verifyEmail(token: string): Promise<{ message?: string }> {
+  return request<{ message?: string }>(`/api/users/verify/${token}`, { method: 'POST' });
+}
+
 /** Demande un email de réinitialisation de mot de passe. Réponse 200 même si l'email n'existe pas (anti-énumération). */
 export function forgotPassword(email: string): Promise<{ message: string }> {
   return request<{ message: string }>('/api/users/forgot-password', {

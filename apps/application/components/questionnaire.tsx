@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/text-field';
 import { Colors } from '@/constants/Colors';
+import { maskFrDate } from '@/lib/date';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 export type IconName = ComponentProps<typeof MaterialIcons>['name'];
@@ -25,6 +26,15 @@ export type Question =
   | {
       key: string;
       type: 'text';
+      title: string;
+      subtitle?: string;
+      icon: IconName;
+      placeholder?: string;
+      validate?: (value: string) => string | null;
+    }
+  | {
+      key: string;
+      type: 'date';
       title: string;
       subtitle?: string;
       icon: IconName;
@@ -129,7 +139,7 @@ export function Questionnaire({
   function onInputNext() {
     if (!q) return;
     const raw = String(answers[q.key] ?? '');
-    if ((q.type === 'number' || q.type === 'text') && q.validate) {
+    if ((q.type === 'number' || q.type === 'text' || q.type === 'date') && q.validate) {
       const err = q.validate(raw);
       if (err) {
         setError(err);
@@ -332,6 +342,20 @@ export function Questionnaire({
             />
           ) : null}
 
+          {q!.type === 'date' ? (
+            <TextField
+              label=""
+              value={String(answers[q!.key] ?? '')}
+              onChangeText={(v) => setAnswers((a) => ({ ...a, [q!.key]: maskFrDate(v) }))}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder={q!.placeholder}
+              onSubmitEditing={onInputNext}
+              returnKeyType="next"
+            />
+          ) : null}
+
           {error ? (
             <ThemedText style={styles.error} accessibilityLiveRegion="polite">
               {error}
@@ -356,7 +380,7 @@ export function Questionnaire({
 
         {isReview ? (
           <Button label={labels.finish} onPress={finish} loading={submitting} />
-        ) : q!.type === 'number' || q!.type === 'text' ? (
+        ) : q!.type === 'number' || q!.type === 'text' || q!.type === 'date' ? (
           <Button label={labels.next} onPress={onInputNext} />
         ) : (
           <View />

@@ -135,8 +135,9 @@ export const googleOAuthCallback: Endpoint = {
           await req.payload.update({
             collection: 'users',
             id: userId,
+            // Google a déjà vérifié l'email → on marque le compte vérifié (débloque la connexion).
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            data: { googleId: profile.sub, authProvider: 'google' } as any,
+            data: { googleId: profile.sub, authProvider: 'google', _verified: true } as any,
             overrideAccess: true,
           })
         } else {
@@ -152,6 +153,9 @@ export const googleOAuthCallback: Endpoint = {
               firstName: profile.given_name,
               lastName: profile.family_name,
               roles: [DEFAULT_ROLE],
+              // Email déjà vérifié par Google → compte directement vérifié (sinon la connexion serait bloquée)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              _verified: true as any,
               // Throwaway password — replaced every login by the temp-password bridge below
               password: crypto.randomUUID() + crypto.randomUUID(),
             },

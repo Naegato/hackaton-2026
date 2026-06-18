@@ -1,5 +1,6 @@
 import type { Answers, Question } from '@/components/questionnaire';
 import type { Preferences } from '@/lib/api';
+import { ageFromIso, frDateToIso, isoToFrDate } from '@/lib/date';
 import type { TranslationKey } from '@/lib/i18n';
 
 type Translate = (key: TranslationKey) => string;
@@ -9,18 +10,19 @@ type Translate = (key: TranslationKey) => string;
  * Réutilisable : pour la souscription future, on pourra concaténer 1-2 questions en plus.
  */
 export function buildPreferenceQuestions(t: Translate): Question[] {
-  const currentYear = new Date().getFullYear();
   return [
     {
-      key: 'birthYear',
-      type: 'number',
-      title: t('onboarding.q.birthYear'),
-      subtitle: t('onboarding.q.birthYearSub'),
+      key: 'birthdate',
+      type: 'date',
+      title: t('onboarding.q.birthdate'),
+      subtitle: t('onboarding.q.birthdateSub'),
       icon: 'cake',
-      placeholder: t('onboarding.birthYearPlaceholder'),
+      placeholder: t('onboarding.birthdatePlaceholder'),
       validate: (v) => {
-        const n = Number(v);
-        if (!v || Number.isNaN(n) || n < 1900 || n > currentYear) return t('onboarding.errBirthYear');
+        // On exige une date complète (JJ/MM/AAAA) : l'âge exact conditionne l'éligibilité (Senior 62+, Améthyste 60+…)
+        const iso = frDateToIso(v);
+        const age = iso ? ageFromIso(iso) : null;
+        if (iso == null || age == null || age < 0 || age > 120) return t('onboarding.errBirthdate');
         return null;
       },
     },
@@ -63,10 +65,10 @@ export function buildPreferenceQuestions(t: Translate): Question[] {
 }
 
 export function answersToPreferences(a: Answers): Preferences {
-  const year = Number(a.birthYear);
+  // La saisie est masquée JJ/MM/AAAA → on stocke la date complète en ISO
+  const iso = a.birthdate ? frDateToIso(String(a.birthdate)) : null;
   return {
-    // On ne demande que l'année → on stocke une date au 1ᵉʳ janvier (l'âge calculé reste juste à ±1)
-    birthdate: year ? `${year}-01-01` : null,
+    birthdate: iso,
     status: (a.status as Preferences['status']) ?? null,
     usageDaysPerWeek: typeof a.usageDaysPerWeek === 'number' ? a.usageDaysPerWeek : null,
     socialBeneficiary: Boolean(a.socialBeneficiary),
@@ -76,7 +78,7 @@ export function answersToPreferences(a: Answers): Preferences {
 export function preferencesToAnswers(p?: Preferences | null): Answers {
   if (!p) return {};
   const a: Answers = {};
-  if (p.birthdate) a.birthYear = String(new Date(p.birthdate).getFullYear());
+  if (p.birthdate) a.birthdate = isoToFrDate(p.birthdate);
   if (p.status) a.status = p.status;
   if (p.usageDaysPerWeek != null) a.usageDaysPerWeek = p.usageDaysPerWeek;
   if (p.socialBeneficiary != null) a.socialBeneficiary = p.socialBeneficiary;
