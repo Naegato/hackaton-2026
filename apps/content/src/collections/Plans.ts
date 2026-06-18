@@ -63,7 +63,15 @@ export const Plans: CollectionConfig = {
           docs.map((d) => {
             const img = d.image
             const url = img && typeof img === 'object' && 'url' in img ? (img.url ?? null) : null
-            return [d.slug, { image: url, zones: d.zones ?? null, eligibility: d.eligibility ?? null }]
+            return [
+              d.slug,
+              {
+                image: url,
+                zones: d.zones ?? null,
+                eligibility: d.eligibility ?? null,
+                recommendedFor: d.recommendedFor ?? null,
+              },
+            ]
           }),
         )
         const plans = result.plans.map((p) => ({ ...p, ...metaBySlug.get(p.slug) }))
