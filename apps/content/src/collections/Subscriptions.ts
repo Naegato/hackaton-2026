@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdminField, isAuthenticated, isAdminFromUser, ownedBy } from '../access/roles'
+import { isAdminField, isAuthenticated, isStaffFromUser, ownedBy } from '../access/roles'
 
 /**
  * Abonnement réel géré par un compte.
@@ -13,8 +13,9 @@ export const Subscriptions: CollectionConfig = {
   slug: 'subscriptions',
   admin: {
     useAsTitle: 'cardNumber',
-    defaultColumns: ['cardNumber', 'plan', 'managedBy', 'status', 'endDate'],
+    defaultColumns: ['cardNumber', 'holderFirstName', 'holderLastName', 'plan', 'managedBy', 'status', 'endDate'],
     group: 'Abonnements',
+    description: 'Abonnements IDFM gérés par les comptes utilisateurs.',
   },
   access: {
     // Row-level : un compte ne voit/modifie que SES abonnements (sauf admin)

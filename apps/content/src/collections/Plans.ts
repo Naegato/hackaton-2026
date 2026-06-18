@@ -17,8 +17,13 @@ export const Plans: CollectionConfig = {
   slug: 'plans',
   admin: {
     useAsTitle: 'name',
-    defaultColumns: ['name', 'price', 'period', 'zones', 'active'],
-    group: 'Abonnements',
+    defaultColumns: ['name', 'price', 'period', 'zones', 'active', 'updatedAt'],
+    group: 'Catalogue',
+    description: "Offres d'abonnement IDFM disponibles à la souscription.",
+    hidden: ({ user }) => {
+      const roles = (user as { roles?: string[] | null } | null)?.roles ?? []
+      return roles.includes('comutitres_manager') && !roles.some((r) => ['developer', 'admin'].includes(r))
+    },
   },
   access: {
     read: () => true,

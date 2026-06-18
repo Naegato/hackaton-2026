@@ -1,7 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { APIError } from 'payload'
 
-import { isAdmin, isAuthenticated, isAdminFromUser, ownedByAny } from '../access/roles'
+import { isAdmin, isAuthenticated, isStaffFromUser, ownedByAny } from '../access/roles'
 
 /** Normalise une valeur relationnelle (id string ou objet peuplé) en id. */
 const toId = (value: unknown): string => {
@@ -21,8 +21,9 @@ export const TransferRequests: CollectionConfig = {
   slug: 'transfer-requests',
   admin: {
     useAsTitle: 'id',
-    defaultColumns: ['subscription', 'fromUser', 'toUser', 'status', 'createdAt'],
+    defaultColumns: ['subscription', 'fromUser', 'toUser', 'status', 'respondedAt', 'createdAt'],
     group: 'Abonnements',
+    description: "Demandes de transfert d'abonnement entre comptes (avec acceptation obligatoire).",
   },
   access: {
     create: isAuthenticated,
@@ -77,7 +78,7 @@ export const TransferRequests: CollectionConfig = {
     beforeChange: [
       async ({ data, req, operation, originalDoc }) => {
         const user = req.user as { id: string; roles?: string[] | null } | null
-        const isAdminUser = isAdminFromUser(user)
+        const isStaffUser = isStaffFromUser(user)
 
         if (operation === 'create') {
           // 1. L'émetteur doit gérer l'abonnement ciblé
@@ -88,7 +89,7 @@ export const TransferRequests: CollectionConfig = {
             req,
           })
           const manager = toId(subscription.managedBy)
-          if (!isAdminUser && manager !== user?.id) {
+          if (!isStaffUser && manager !== user?.id) {
             throw new APIError("Vous ne gérez pas cet abonnement.", 403)
           }
           data.fromUser = manager
@@ -135,10 +136,10 @@ export const TransferRequests: CollectionConfig = {
           const fromId = toId(originalDoc.fromUser)
           const toUserId = toId(originalDoc.toUser)
 
-          if ((data.status === 'accepted' || data.status === 'declined') && !isAdminUser && user?.id !== toUserId) {
+          if ((data.status === 'accepted' || data.status === 'declined') && !isStaffUser && user?.id !== toUserId) {
             throw new APIError("Seul le destinataire peut accepter ou refuser.", 403)
           }
-          if (data.status === 'cancelled' && !isAdminUser && user?.id !== fromId) {
+          if (data.status === 'cancelled' && !isStaffUser && user?.id !== fromId) {
             throw new APIError("Seul l'émetteur peut annuler.", 403)
           }
           data.respondedAt = new Date().toISOString()
