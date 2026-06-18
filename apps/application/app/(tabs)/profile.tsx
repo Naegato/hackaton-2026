@@ -217,6 +217,28 @@ export default function ProfileScreen() {
             {t('profile.deleteAccount')}
           </ThemedText>
         </TouchableOpacity>
+
+        {/* Informations légales */}
+        <ThemedText style={styles.legalSectionLabel}>Informations légales</ThemedText>
+        <View style={styles.card}>
+          <NavRow
+            label="Conditions Générales d'Utilisation"
+            accessibilityHint="Ouvre les CGU"
+            onPress={() => router.push('/legal/terms')}
+          />
+          <Separator />
+          <NavRow
+            label="Politique de confidentialité"
+            accessibilityHint="Ouvre la politique de confidentialité"
+            onPress={() => router.push('/legal/privacy')}
+          />
+          <Separator />
+          <NavRow
+            label="Mentions légales"
+            accessibilityHint="Ouvre les mentions légales"
+            onPress={() => router.push('/legal/legal-notice')}
+          />
+        </View>
       </ScrollView>
 
       {/* Modal de confirmation */}
@@ -480,5 +502,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.textSecondary,
     fontWeight: '500',
+  },
+
+  legalSectionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
   },
 });

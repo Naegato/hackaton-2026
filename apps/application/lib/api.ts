@@ -460,3 +460,35 @@ export function createTicket(data: {
     body: JSON.stringify(data),
   }, true);
 }
+
+// ---------------------------------------------------------------------------
+// Pages légales (globals Payload — accès public)
+// ---------------------------------------------------------------------------
+
+export type LexicalNode = {
+  type: string;
+  text?: string;
+  format?: number; // bitmask : 1=gras, 2=italique, 4=barré, 8=souligné
+  tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  listType?: 'bullet' | 'number';
+  value?: number;
+  children?: LexicalNode[];
+};
+
+export type LegalPage = {
+  title?: string | null;
+  content?: { root: { children: LexicalNode[] } } | null;
+};
+
+export type LegalSlug =
+  | 'terms'
+  | 'sales-terms'
+  | 'privacy'
+  | 'legal-notice'
+  | 'faq'
+  | 'help';
+
+/** Récupère une page globale Payload (public, sans auth). */
+export function fetchLegalPage(slug: string, locale = 'fr'): Promise<LegalPage> {
+  return request<LegalPage>(`/api/globals/${slug}?locale=${locale}&depth=0`, { method: 'GET' });
+}
