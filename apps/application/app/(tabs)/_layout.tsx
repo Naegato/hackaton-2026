@@ -24,8 +24,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: t('nav.offers'),
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+            title: t('nav.personalization'),
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="slider.horizontal.3" color={color} />,
           }}
         />
         <Tabs.Screen

@@ -24,6 +24,15 @@ export type Question =
     }
   | {
       key: string;
+      type: 'text';
+      title: string;
+      subtitle?: string;
+      icon: IconName;
+      placeholder?: string;
+      validate?: (value: string) => string | null;
+    }
+  | {
+      key: string;
       type: 'choice';
       title: string;
       subtitle?: string;
@@ -117,10 +126,10 @@ export function Questionnaire({
     setIndex((i) => i + 1); // dernière question → étape de validation
   }
 
-  function onNumberNext() {
+  function onInputNext() {
     if (!q) return;
     const raw = String(answers[q.key] ?? '');
-    if (q.type === 'number' && q.validate) {
+    if ((q.type === 'number' || q.type === 'text') && q.validate) {
       const err = q.validate(raw);
       if (err) {
         setError(err);
@@ -306,7 +315,19 @@ export function Questionnaire({
               keyboardType="number-pad"
               inputMode="numeric"
               placeholder={q!.placeholder}
-              onSubmitEditing={onNumberNext}
+              onSubmitEditing={onInputNext}
+              returnKeyType="next"
+            />
+          ) : null}
+
+          {q!.type === 'text' ? (
+            <TextField
+              label=""
+              value={String(answers[q!.key] ?? '')}
+              onChangeText={(v) => setAnswers((a) => ({ ...a, [q!.key]: v }))}
+              autoCapitalize="words"
+              placeholder={q!.placeholder}
+              onSubmitEditing={onInputNext}
               returnKeyType="next"
             />
           ) : null}
@@ -335,8 +356,8 @@ export function Questionnaire({
 
         {isReview ? (
           <Button label={labels.finish} onPress={finish} loading={submitting} />
-        ) : q!.type === 'number' ? (
-          <Button label={labels.next} onPress={onNumberNext} />
+        ) : q!.type === 'number' || q!.type === 'text' ? (
+          <Button label={labels.next} onPress={onInputNext} />
         ) : (
           <View />
         )}
