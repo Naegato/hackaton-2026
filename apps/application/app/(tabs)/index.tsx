@@ -3,16 +3,13 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { PlanCard } from '@/components/plan-card';
-import { PlanInfoModal } from '@/components/plan-info-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
 import { getRecommendation, type RecommendationResult } from '@/lib/api';
-import { formatPlanPrice, planImageSource } from '@/lib/plan-images';
-
-type Plan = RecommendationResult['plans'][number];
+import { formatPlanPrice } from '@/lib/plan-images';
 
 export default function OffersScreen() {
   const { user } = useAuth();
@@ -27,7 +24,6 @@ export default function OffersScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [infoPlan, setInfoPlan] = useState<Plan | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -101,18 +97,11 @@ export default function OffersScreen() {
                   ? `≈ ${Math.round(plan.monthlyEquivalent)} ${t('offers.perMonth')}`
                   : null
               }
-              onInfo={() => setInfoPlan(plan)}
+              onPress={() => router.push(`/plan/${plan.slug}`)}
             />
           ))
         )}
       </ScrollView>
-
-      <PlanInfoModal
-        plan={infoPlan}
-        imageSource={infoPlan ? planImageSource(infoPlan) : null}
-        priceLabel={infoPlan ? formatPlanPrice(infoPlan, t) : ''}
-        onClose={() => setInfoPlan(null)}
-      />
     </ThemedView>
   );
 }

@@ -17,19 +17,22 @@ type Props = {
   recommendedLabel?: string;
   /** Ligne secondaire optionnelle (ex. « ≈ 83 €/mois »). */
   subtitle?: string | null;
-  /** Ouvre la fiche d'information. */
-  onInfo: () => void;
+  /** Ouvre le détail de l'offre (tap sur la carte). */
+  onPress: () => void;
 };
 
-/** Carte d'abonnement : illustration, bouton info, nom, prix. Partagée entre Offres et Catalogue. */
-export function PlanCard({ plan, priceLabel, recommended = false, recommendedLabel, subtitle, onInfo }: Props) {
+/** Carte d'abonnement : illustration, nom, prix. Cliquable → détail. Partagée entre Offres et Catalogue. */
+export function PlanCard({ plan, priceLabel, recommended = false, recommendedLabel, subtitle, onPress }: Props) {
   const img = planImageSource(plan);
   return (
-    <View
-      style={[
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
         styles.card,
         { borderColor: recommended ? Colors.primary : Colors.border },
         recommended && styles.recommended,
+        pressed && styles.pressed,
       ]}>
       {img ? (
         <Image
@@ -41,14 +44,10 @@ export function PlanCard({ plan, priceLabel, recommended = false, recommendedLab
         />
       ) : null}
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Info"
-        onPress={onInfo}
-        hitSlop={8}
-        style={({ pressed }) => [styles.infoBtn, pressed && styles.pressed]}>
-        <MaterialIcons name="info-outline" size={20} color="#fff" />
-      </Pressable>
+      {/* Chevron indiquant que la carte est cliquable */}
+      <View style={styles.chip}>
+        <MaterialIcons name="chevron-right" size={22} color="#fff" />
+      </View>
 
       <View style={styles.body}>
         <View style={styles.header}>
@@ -67,7 +66,7 @@ export function PlanCard({ plan, priceLabel, recommended = false, recommendedLab
         <ThemedText style={styles.price}>{priceLabel}</ThemedText>
         {subtitle ? <ThemedText style={styles.subtitle}>{subtitle}</ThemedText> : null}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -75,7 +74,7 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
   recommended: { borderWidth: 2 },
   image: { width: '100%', height: 130, backgroundColor: Colors.borderLight },
-  infoBtn: {
+  chip: {
     position: 'absolute',
     top: 8,
     right: 8,

@@ -1,28 +1,27 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 
 import { CatalogFilters } from '@/components/catalog-filters';
 import { PlanCard } from '@/components/plan-card';
-import { PlanInfoModal } from '@/components/plan-info-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useLocale } from '@/context/locale-context';
 import { getRecommendation, type RecommendationResult } from '@/lib/api';
 import { planMatchesFilters, type CatalogFilters as Filters } from '@/lib/catalog-filters';
-import { formatPlanPrice, planImageSource } from '@/lib/plan-images';
+import { formatPlanPrice } from '@/lib/plan-images';
 
 type Plan = RecommendationResult['plans'][number];
 
 /** Catalogue : tous les abonnements disponibles, avec descriptif via la fiche info. */
 export default function CatalogScreen() {
   const { t } = useLocale();
+  const router = useRouter();
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [infoPlan, setInfoPlan] = useState<Plan | null>(null);
   const [filters, setFilters] = useState<Filters>({});
 
   const filtered = plans.filter((p) => planMatchesFilters(p, filters));
@@ -75,18 +74,11 @@ export default function CatalogScreen() {
               key={plan.slug}
               plan={plan}
               priceLabel={formatPlanPrice(plan, t)}
-              onInfo={() => setInfoPlan(plan)}
+              onPress={() => router.push(`/plan/${plan.slug}`)}
             />
           ))
         )}
       </ScrollView>
-
-      <PlanInfoModal
-        plan={infoPlan}
-        imageSource={infoPlan ? planImageSource(infoPlan) : null}
-        priceLabel={infoPlan ? formatPlanPrice(infoPlan, t) : ''}
-        onClose={() => setInfoPlan(null)}
-      />
     </ThemedView>
   );
 }

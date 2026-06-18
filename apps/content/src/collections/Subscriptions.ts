@@ -71,8 +71,9 @@ export const Subscriptions: CollectionConfig = {
     {
       name: 'status',
       type: 'select',
-      defaultValue: 'active',
+      defaultValue: 'pending',
       options: [
+        { label: 'En attente de validation', value: 'pending' },
         { label: 'Actif', value: 'active' },
         { label: 'Expiré', value: 'expired' },
         { label: 'Résilié', value: 'cancelled' },
