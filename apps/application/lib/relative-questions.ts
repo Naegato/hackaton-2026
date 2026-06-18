@@ -1,4 +1,5 @@
 import type { Answers, Question } from '@/components/questionnaire';
+import { ageFromIso, frDateToIso } from '@/lib/date';
 import type { TranslationKey } from '@/lib/i18n';
 
 import { buildPreferenceQuestions } from '@/lib/preferences-questions';
@@ -49,10 +50,10 @@ export function relativeRecommendationParams(a: Answers): {
   usageDaysPerWeek?: number;
   socialBeneficiary?: boolean;
 } {
-  const year = Number(a.birthYear);
-  const currentYear = new Date().getFullYear();
+  const iso = a.birthdate ? frDateToIso(String(a.birthdate)) : null;
+  const age = iso ? ageFromIso(iso) : null;
   return {
-    age: year ? currentYear - year : undefined,
+    age: age ?? undefined,
     status: typeof a.status === 'string' ? a.status : undefined,
     usageDaysPerWeek: typeof a.usageDaysPerWeek === 'number' ? a.usageDaysPerWeek : undefined,
     socialBeneficiary: typeof a.socialBeneficiary === 'boolean' ? a.socialBeneficiary : undefined,

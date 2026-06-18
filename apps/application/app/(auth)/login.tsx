@@ -39,7 +39,13 @@ export default function LoginScreen() {
       await signIn(email.trim(), password);
       router.replace('/');
     } catch (e) {
-      setError(e instanceof Error ? e.message : t('login.errGeneric'));
+      // Payload renvoie un message « please verify your email » (en anglais) → on le localise
+      const msg = e instanceof Error ? e.message : '';
+      if (/verif/i.test(msg)) {
+        setError(t('login.errUnverified'));
+      } else {
+        setError(msg || t('login.errGeneric'));
+      }
     } finally {
       setLoading(false);
     }
