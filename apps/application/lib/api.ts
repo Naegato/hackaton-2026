@@ -44,6 +44,13 @@ export type RecommendationResult = {
       meansTested?: boolean | null;
       requiresCMI?: boolean | null;
     } | null;
+    recommendedFor?: {
+      minAge?: number | null;
+      maxAge?: number | null;
+      usageDaysPerWeekMin?: number | null;
+      usageDaysPerWeekMax?: number | null;
+      profileLabel?: string | null;
+    } | null;
   }[];
 };
 
