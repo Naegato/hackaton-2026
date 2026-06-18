@@ -89,7 +89,8 @@ export const Users: CollectionConfig = {
       type: 'select',
       hasMany: true,
       defaultValue: [DEFAULT_ROLE],
-      options: [...ROLES],
+      // 'user' conservé pour la rétrocompatibilité avec les comptes créés avant le RBAC
+      options: [...ROLES, { label: 'Utilisateur (legacy)', value: 'user' }],
       saveToJWT: true,
       access: {
         create: isSuperFieldLevel,
