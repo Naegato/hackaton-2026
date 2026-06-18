@@ -67,8 +67,10 @@ jobs:
     needs: build-push
     runs-on: [self-hosted, linux, swarm-manager]
 
-    environment:
-      name: production
+    # NOTE: no GitHub Environment gate for now — creating environments requires
+    # repo-admin rights we don't currently have. Re-add `environment: production`
+    # (with required reviewers) once available, so branch pushes can't run host
+    # commands on the VM unreviewed. See infra/scripts/vm-setup.sh security note.
 
     steps:
       - uses: actions/checkout@v4
