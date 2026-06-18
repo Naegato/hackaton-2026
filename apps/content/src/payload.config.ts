@@ -15,6 +15,7 @@ import { pageGlobals } from './globals/Pages'
 import { defaultLocale, locales } from './locales'
 import { googleOAuthCallback, googleOAuthRedirect } from './endpoints/oauth-google'
 import { verifyPhoto } from './endpoints/verify-photo'
+import { assistantEndpoint } from './endpoints/assistant'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -45,6 +46,7 @@ export default buildConfig({
     googleOAuthRedirect,
     googleOAuthCallback,
     verifyPhoto,
+    assistantEndpoint,
   ],
   editor: lexicalEditor(),
   // CORS : origines autorisées à appeler l'API.
