@@ -27,7 +27,8 @@ export const Subscriptions: CollectionConfig = {
   hooks: {
     beforeChange: [
       ({ data, req, operation }) => {
-        // À la création, rattache l'abonnement au compte courant (sauf admin qui peut cibler un autre compte)
+        // À la création par un utilisateur connecté non-staff, on force le rattachement à son propre compte.
+        // En l'absence de req.user (seed / Local API), on respecte le `managedBy` fourni (sinon il serait écrasé par undefined).
         if (operation === 'create' && req.user && !isStaffFromUser(req.user as never)) {
           data.managedBy = (req.user as { id?: string }).id
         }

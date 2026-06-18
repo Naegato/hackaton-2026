@@ -66,9 +66,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     firstName?: string;
     lastName?: string;
   }) {
-    // Payload ne renvoie pas de token à la création → on crée puis on se connecte
+    // Vérification email obligatoire : on crée le compte mais on NE connecte PAS.
+    // Payload envoie un email de confirmation ; la connexion reste bloquée tant que l'email n'est pas vérifié.
     await api.register(input);
-    await signIn(input.email, input.password);
   }
 
   async function refreshUser() {

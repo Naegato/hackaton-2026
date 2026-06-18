@@ -145,6 +145,11 @@ export function register(input: {
   });
 }
 
+/** Vérifie l'adresse email via le token reçu par email (active le compte). Débloque ensuite la connexion. */
+export function verifyEmail(token: string): Promise<{ message?: string }> {
+  return request<{ message?: string }>(`/api/users/verify/${token}`, { method: 'POST' });
+}
+
 /** Demande un email de réinitialisation de mot de passe. Réponse 200 même si l'email n'existe pas (anti-énumération). */
 export function forgotPassword(email: string): Promise<{ message: string }> {
   return request<{ message: string }>('/api/users/forgot-password', {
@@ -220,29 +225,134 @@ export type SubscriptionDoc = {
   subscription?: string | null;
 };
 
+export type PlanEligibility = RecommendationResult['plans'][number]['eligibility'];
+
 export type MySubscription = {
   id: string;
   status: string;
-  plan: { slug: string; name: string } | null;
+  plan: { id: string; slug: string; name: string; eligibility?: PlanEligibility } | null;
   holderFirstName?: string | null;
   holderLastName?: string | null;
 };
 
-/** Liste les abonnements du compte courant (offre peuplée). */
+/** Liste les abonnements du compte courant (offre peuplée, avec éligibilité pour déduire les documents requis). */
 export async function listMySubscriptions(): Promise<MySubscription[]> {
   const res = await request<{
     docs: { id: string; status: string; plan: unknown; holderFirstName?: string; holderLastName?: string }[];
   }>('/api/subscriptions?depth=1&limit=50&sort=-createdAt', { method: 'GET' }, true);
   return res.docs.map((d) => {
-    const plan = d.plan as { slug?: string; name?: string } | null;
+    const plan = d.plan as { id?: string; slug?: string; name?: string; eligibility?: PlanEligibility } | null;
     return {
       id: d.id,
       status: d.status,
-      plan: plan && typeof plan === 'object' ? { slug: plan.slug ?? '', name: plan.name ?? '' } : null,
+      plan:
+        plan && typeof plan === 'object'
+          ? { id: plan.id ?? '', slug: plan.slug ?? '', name: plan.name ?? '', eligibility: plan.eligibility ?? null }
+          : null,
       holderFirstName: d.holderFirstName ?? null,
       holderLastName: d.holderLastName ?? null,
     };
   });
+}
+
+/** Indique si le compte courant possède au moins un abonnement « en cours » (actif ou en validation, hors expiré/résilié). */
+export async function hasCurrentSubscription(): Promise<boolean> {
+  const res = await request<{ totalDocs?: number }>(
+    '/api/subscriptions?where[status][in][0]=active&where[status][in][1]=pending&limit=1&depth=0',
+    { method: 'GET' },
+    true,
+  );
+  return (res.totalDocs ?? 0) > 0;
+}
+
+export type TransferStatus = 'pending' | 'accepted' | 'declined' | 'cancelled';
+export type TransferRequest = {
+  id: string;
+  status: TransferStatus;
+  toEmail: string;
+  fromUserId: string | null;
+  toUserId: string | null;
+  subscriptionId: string | null;
+  // Champs dénormalisés (lisibles par les deux parties)
+  fromName: string;
+  planName: string;
+  holderName: string;
+  createdAt?: string;
+};
+
+const relId = (v: unknown): string | null =>
+  v == null ? null : typeof v === 'object' && 'id' in v ? String((v as { id: string }).id) : String(v);
+
+/** Crée une demande de transfert d'un abonnement vers le compte identifié par `toEmail` (avec acceptation). */
+export function createTransferRequest(input: {
+  subscription: string;
+  toEmail: string;
+}): Promise<{ doc: { id: string } }> {
+  return request<{ doc: { id: string } }>(
+    '/api/transfer-requests',
+    { method: 'POST', body: JSON.stringify(input) },
+    true,
+  );
+}
+
+/** Liste les demandes de transfert « en attente » qui me concernent (émises ou reçues). */
+export async function listMyPendingTransfers(): Promise<TransferRequest[]> {
+  const res = await request<{ docs: Record<string, unknown>[] }>(
+    '/api/transfer-requests?where[status][equals]=pending&depth=0&limit=50&sort=-createdAt',
+    { method: 'GET' },
+    true,
+  );
+  return res.docs.map((d) => ({
+    id: String(d.id),
+    status: d.status as TransferStatus,
+    toEmail: String(d.toEmail ?? ''),
+    fromUserId: relId(d.fromUser),
+    toUserId: relId(d.toUser),
+    subscriptionId: relId(d.subscription),
+    fromName: String(d.fromName ?? ''),
+    planName: String(d.planName ?? ''),
+    holderName: String(d.holderName ?? ''),
+    createdAt: d.createdAt as string | undefined,
+  }));
+}
+
+/** Le destinataire accepte ou refuse une demande de transfert. */
+export function respondTransfer(id: string, status: 'accepted' | 'declined'): Promise<unknown> {
+  return request(`/api/transfer-requests/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }, true);
+}
+
+/** Lit les informations du titulaire d'un abonnement (lisible par le gestionnaire courant). */
+export async function getSubscriptionHolder(
+  id: string,
+): Promise<{ holderFirstName: string; holderLastName: string; planName: string }> {
+  const d = await request<{
+    holderFirstName?: string | null;
+    holderLastName?: string | null;
+    plan?: { name?: string } | string | null;
+  }>(`/api/subscriptions/${id}?depth=1`, { method: 'GET' }, true);
+  const planName = d.plan && typeof d.plan === 'object' ? d.plan.name ?? '' : '';
+  return {
+    holderFirstName: d.holderFirstName ?? '',
+    holderLastName: d.holderLastName ?? '',
+    planName,
+  };
+}
+
+/** Met à jour les informations du titulaire d'un abonnement (par le gestionnaire courant). */
+export function updateSubscriptionHolder(
+  id: string,
+  data: { holderFirstName: string; holderLastName: string },
+): Promise<unknown> {
+  return request(`/api/subscriptions/${id}`, { method: 'PATCH', body: JSON.stringify(data) }, true);
+}
+
+/** L'émetteur annule une demande de transfert en attente. */
+export function cancelTransfer(id: string): Promise<unknown> {
+  return request(
+    `/api/transfer-requests/${id}`,
+    { method: 'PATCH', body: JSON.stringify({ status: 'cancelled' }) },
+    true,
+  );
 }
 
 /** Liste tous les documents du compte courant (tous abonnements confondus). */

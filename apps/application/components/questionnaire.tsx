@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/text-field';
 import { Colors } from '@/constants/Colors';
+import { maskFrDate } from '@/lib/date';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 export type IconName = ComponentProps<typeof MaterialIcons>['name'];
@@ -16,6 +17,24 @@ export type Question =
   | {
       key: string;
       type: 'number';
+      title: string;
+      subtitle?: string;
+      icon: IconName;
+      placeholder?: string;
+      validate?: (value: string) => string | null;
+    }
+  | {
+      key: string;
+      type: 'text';
+      title: string;
+      subtitle?: string;
+      icon: IconName;
+      placeholder?: string;
+      validate?: (value: string) => string | null;
+    }
+  | {
+      key: string;
+      type: 'date';
       title: string;
       subtitle?: string;
       icon: IconName;
@@ -117,10 +136,10 @@ export function Questionnaire({
     setIndex((i) => i + 1); // dernière question → étape de validation
   }
 
-  function onNumberNext() {
+  function onInputNext() {
     if (!q) return;
     const raw = String(answers[q.key] ?? '');
-    if (q.type === 'number' && q.validate) {
+    if ((q.type === 'number' || q.type === 'text' || q.type === 'date') && q.validate) {
       const err = q.validate(raw);
       if (err) {
         setError(err);
@@ -138,6 +157,7 @@ export function Questionnaire({
         {onSkip ? (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={skipLabel}
             disabled={submitting}
             onPress={() => onSkip()}
             style={({ pressed }) => [styles.skip, pressed && styles.pressed]}>
@@ -305,7 +325,33 @@ export function Questionnaire({
               keyboardType="number-pad"
               inputMode="numeric"
               placeholder={q!.placeholder}
-              onSubmitEditing={onNumberNext}
+              onSubmitEditing={onInputNext}
+              returnKeyType="next"
+            />
+          ) : null}
+
+          {q!.type === 'text' ? (
+            <TextField
+              label=""
+              value={String(answers[q!.key] ?? '')}
+              onChangeText={(v) => setAnswers((a) => ({ ...a, [q!.key]: v }))}
+              autoCapitalize="words"
+              placeholder={q!.placeholder}
+              onSubmitEditing={onInputNext}
+              returnKeyType="next"
+            />
+          ) : null}
+
+          {q!.type === 'date' ? (
+            <TextField
+              label=""
+              value={String(answers[q!.key] ?? '')}
+              onChangeText={(v) => setAnswers((a) => ({ ...a, [q!.key]: maskFrDate(v) }))}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              maxLength={10}
+              placeholder={q!.placeholder}
+              onSubmitEditing={onInputNext}
               returnKeyType="next"
             />
           ) : null}
@@ -334,8 +380,8 @@ export function Questionnaire({
 
         {isReview ? (
           <Button label={labels.finish} onPress={finish} loading={submitting} />
-        ) : q!.type === 'number' ? (
-          <Button label={labels.next} onPress={onNumberNext} />
+        ) : q!.type === 'number' || q!.type === 'text' || q!.type === 'date' ? (
+          <Button label={labels.next} onPress={onInputNext} />
         ) : (
           <View />
         )}
@@ -369,7 +415,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  progressLabel: { fontSize: 11, textAlign: 'center', opacity: 0.7, marginTop: 4, lineHeight: 14 },
+  progressLabel: { fontSize: 11, textAlign: 'center', color: Colors.textSecondary, marginTop: 4, lineHeight: 14 },
   progressLabelSpacer: { height: 4 },
   pressed: { opacity: 0.6 },
   body: { flex: 1 },

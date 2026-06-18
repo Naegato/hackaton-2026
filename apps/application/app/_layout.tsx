@@ -1,9 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useRef } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import 'react-native-reanimated';
+
+import { hasCurrentSubscription } from '@/lib/api';
 
 // Nécessaire pour Expo Web : ferme le popup OAuth et renvoie le token au parent
 WebBrowser.maybeCompleteAuthSession();
@@ -18,6 +21,35 @@ export const unstable_settings = {
 
 function RootNavigator() {
   const { user, initializing } = useAuth();
+  const router = useRouter();
+
+  const authed = !!user;
+  const ready = authed && user?.onboardingCompleted === true;
+
+  // À la connexion (transition vers l'état « prêt »), si l'utilisateur a un abonnement en cours,
+  // on l'amène directement sur « Mes abonnements » plutôt que sur l'onglet Personnalisation.
+  const redirectedRef = useRef(false);
+  useEffect(() => {
+    if (!ready) {
+      redirectedRef.current = false;
+      return;
+    }
+    if (redirectedRef.current) return;
+    redirectedRef.current = true;
+    let active = true;
+    (async () => {
+      try {
+        if (active && (await hasCurrentSubscription())) {
+          router.replace('/(tabs)/wallet');
+        }
+      } catch {
+        // pas de redirection si l'appel échoue : on reste sur l'onglet par défaut
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [ready, router]);
 
   // Tant que la session se charge, on évite tout flash login/app
   if (initializing) {
@@ -28,8 +60,6 @@ function RootNavigator() {
     );
   }
 
-  const authed = !!user;
-  const ready = authed && user?.onboardingCompleted === true;
   const needsOnboarding = authed && user?.onboardingCompleted !== true;
 
   return (
@@ -43,6 +73,11 @@ function RootNavigator() {
         <Stack.Screen name="plan/[slug]" options={{ headerShown: true }} />
         <Stack.Screen name="subscribe/[slug]" options={{ headerShown: true }} />
         <Stack.Screen name="support" options={{ headerShown: false }} />
+        {/* `subscribe` est un navigateur imbriqué (subscribe/_layout) qui gère son propre header → on masque celui de la pile racine */}
+        <Stack.Screen name="subscribe" options={{ headerShown: false }} />
+        <Stack.Screen name="relative" options={{ headerShown: true, title: 'Abonnement pour un proche' }} />
+        <Stack.Screen name="transfer" options={{ headerShown: true, title: 'Transférer un abonnement' }} />
+        <Stack.Screen name="subscription-holder" options={{ headerShown: true, title: 'Informations du titulaire' }} />
       </Stack.Protected>
 
       {/* Connecté mais 1ʳᵉ fois → questionnaire */}

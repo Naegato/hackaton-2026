@@ -23,6 +23,30 @@ export const Users: CollectionConfig = {
     // Protection anti-bruteforce (cf. brief : rate limiting / OWASP)
     maxLoginAttempts: 5,
     lockTime: 10 * 60 * 1000, // 10 minutes
+    // Vérification de l'adresse email obligatoire avant la première connexion.
+    // À la création, Payload met `_verified: false` et envoie cet email ; la connexion est bloquée tant que non vérifié.
+    // Les comptes Google sont créés `_verified: true` (email déjà vérifié par Google), de même que les comptes de démo (seed).
+    verify: {
+      generateEmailHTML: (args) => {
+        const token = (args as { token?: string } | undefined)?.token ?? ''
+        const base = (process.env.APP_PUBLIC_URL || 'http://localhost:8081').replace(/\/$/, '')
+        const verifyUrl = `${base}/verify-email?token=${token}`
+        return `
+          <div style="font-family: sans-serif; line-height: 1.5;">
+            <h2>Confirmez votre adresse email</h2>
+            <p>Bienvenue sur IDF Mobilité ! Pour activer votre compte et pouvoir vous connecter, confirmez votre adresse email.</p>
+            <p>
+              <a href="${verifyUrl}" style="display:inline-block;padding:12px 20px;background:#0a7ea4;color:#fff;border-radius:8px;text-decoration:none;">
+                Confirmer mon adresse email
+              </a>
+            </p>
+            <p>Ou copiez ce lien dans votre navigateur :<br/><a href="${verifyUrl}">${verifyUrl}</a></p>
+            <p style="color:#888;font-size:13px;">Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.</p>
+          </div>
+        `
+      },
+      generateEmailSubject: () => 'Confirmez votre adresse email — IDF Mobilité',
+    },
     forgotPassword: {
       // Email envoyé lors d'une demande de réinitialisation.
       // Le lien pointe vers l'écran /reset-password de l'app (web mobile + natif via le même chemin),
