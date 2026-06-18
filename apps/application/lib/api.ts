@@ -13,6 +13,37 @@ export type Preferences = {
   usageDaysPerWeek?: number | null;
   socialBeneficiary?: boolean | null;
 };
+export type DetailedProfile =
+  | 'collegien'
+  | 'lyceen'
+  | 'etudiant'
+  | 'alternant'
+  | 'salarie'
+  | 'fonctionnaire'
+  | 'independant'
+  | 'chomeur'
+  | 'rsa'
+  | 'retraite'
+  | 'handicap'
+  | 'militaire'
+  | 'enceinte'
+  | 'service-civique';
+
+export type EmployerReimbursement = '50' | 'plus' | 'non';
+
+export type Situation =
+  | 'boursier-crous'
+  | 'boursier-en'
+  | 'non-boursier'
+  | 'cecite'
+  | 'invalidite'
+  | 'priorite'
+  | 'cmi'
+  | 'modeste'
+  | 'aucune'
+  | 'etudiante'
+  | 'non';
+
 export { BASE_URL };
 
 export type User = {
