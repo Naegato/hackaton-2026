@@ -2,14 +2,22 @@ import type { Access, FieldAccess } from 'payload'
 
 type WithRoles = { id: string; roles?: string[] | null } | null
 
+const STAFF_ROLES = ['developer', 'admin', 'comutitres_manager']
+
 const getUser = (req: { user?: unknown }): WithRoles => req.user as WithRoles
 
-export const isAdminFromUser = (user: WithRoles): boolean => user?.roles?.includes('admin') ?? false
+/** admin uniquement (écriture sur les collections métier). */
+export const isAdminFromUser = (user: WithRoles): boolean =>
+  user?.roles?.includes('admin') ?? false
 
-/** Accès collection réservé aux admins. */
+/** developer + admin + comutitres_manager (accès SAV). */
+export const isStaffFromUser = (user: WithRoles): boolean =>
+  user?.roles?.some((r) => STAFF_ROLES.includes(r)) ?? false
+
+/** Accès collection réservé aux super-admins (developer + admin). */
 export const isAdmin: Access = ({ req }) => isAdminFromUser(getUser(req))
 
-/** Accès champ (field-level) réservé aux admins. */
+/** Accès champ (field-level) réservé aux super-admins. */
 export const isAdminField: FieldAccess = ({ req }) => isAdminFromUser(getUser(req))
 
 /** Accès réservé aux utilisateurs connectés. */
@@ -17,7 +25,7 @@ export const isAuthenticated: Access = ({ req }) => Boolean(getUser(req))
 
 /**
  * Sécurité par ligne sur un champ relationnel vers `users`.
- * - admin : tout
+ * - staff (developer/admin/comutitres_manager) : tout
  * - sinon : uniquement les documents où <field> == utilisateur courant
  */
 export const ownedBy =
@@ -25,7 +33,7 @@ export const ownedBy =
   ({ req }) => {
     const user = getUser(req)
     if (!user) return false
-    if (isAdminFromUser(user)) return true
+    if (isStaffFromUser(user)) return true
     return { [field]: { equals: user.id } }
   }
 
@@ -38,6 +46,6 @@ export const ownedByAny =
   ({ req }) => {
     const user = getUser(req)
     if (!user) return false
-    if (isAdminFromUser(user)) return true
+    if (isStaffFromUser(user)) return true
     return { or: fields.map((field) => ({ [field]: { equals: user.id } })) }
   }

@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdminField, isAuthenticated, isAdminFromUser, ownedBy } from '../access/roles'
+import { isAdminField, isAuthenticated, isStaffFromUser, ownedBy } from '../access/roles'
 
 /**
  * Abonnement réel géré par un compte.
@@ -13,8 +13,9 @@ export const Subscriptions: CollectionConfig = {
   slug: 'subscriptions',
   admin: {
     useAsTitle: 'cardNumber',
-    defaultColumns: ['cardNumber', 'plan', 'managedBy', 'status', 'endDate'],
+    defaultColumns: ['cardNumber', 'holderFirstName', 'holderLastName', 'plan', 'managedBy', 'status', 'endDate'],
     group: 'Abonnements',
+    description: 'Abonnements IDFM gérés par les comptes utilisateurs.',
   },
   access: {
     // Row-level : un compte ne voit/modifie que SES abonnements (sauf admin)
@@ -26,10 +27,9 @@ export const Subscriptions: CollectionConfig = {
   hooks: {
     beforeChange: [
       ({ data, req, operation }) => {
-        // À la création par un utilisateur connecté (non admin) : rattache l'abonnement à son compte.
-        // En l'absence de req.user (seed / Local API), on respecte le managedBy fourni.
-        if (operation === 'create' && req.user && !isAdminFromUser(req.user as never)) {
-          data.managedBy = (req.user as { id?: string }).id
+        // À la création, rattache l'abonnement au compte courant (sauf admin qui peut cibler un autre compte)
+        if (operation === 'create' && !isStaffFromUser(req.user as never)) {
+          data.managedBy = (req.user as { id?: string } | null)?.id
         }
         return data
       },
