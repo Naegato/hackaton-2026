@@ -1,24 +1,24 @@
 import { ScrollView, StyleSheet } from 'react-native';
 
-import { PhotoVerifier } from '@/components/PhotoVerifier';
+import { VoiceAssistant } from '@/components/VoiceAssistant';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/Colors';
 
 /**
- * Écran de test pour le composant de vérification de photo (Claude Vision).
- * À retirer une fois la souscription d'abonnement intégrée.
+ * Écran de test pour le composant vocal (STT/TTS).
+ * À retirer une fois l'assistant vocal intégré dans son usage réel.
  */
-export default function TestPhotoScreen() {
+export default function TestVoiceScreen() {
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <ThemedText type="title">Test vérification photo</ThemedText>
+        <ThemedText type="title">Test assistant vocal</ThemedText>
         <ThemedText style={styles.subtitle}>
-          Sélectionne une photo pour vérifier qu&apos;elle contient bien un visage humain.
+          Appuyez sur le micro, parlez, puis arrêtez l&apos;écoute pour obtenir une réponse de test.
         </ThemedText>
 
-        <PhotoVerifier onVerified={(uri) => console.log('[test-photo] validée :', uri)} />
+        <VoiceAssistant />
       </ScrollView>
     </ThemedView>
   );

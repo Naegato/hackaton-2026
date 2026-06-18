@@ -138,6 +138,7 @@ export function Questionnaire({
         {onSkip ? (
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={skipLabel}
             disabled={submitting}
             onPress={() => onSkip()}
             style={({ pressed }) => [styles.skip, pressed && styles.pressed]}>
@@ -369,7 +370,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  progressLabel: { fontSize: 11, textAlign: 'center', opacity: 0.7, marginTop: 4, lineHeight: 14 },
+  progressLabel: { fontSize: 11, textAlign: 'center', color: Colors.textSecondary, marginTop: 4, lineHeight: 14 },
   progressLabelSpacer: { height: 4 },
   pressed: { opacity: 0.6 },
   body: { flex: 1 },

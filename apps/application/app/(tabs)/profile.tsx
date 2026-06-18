@@ -42,6 +42,13 @@ export default function ProfileScreen() {
         <ThemedText type="link">Test vérification photo</ThemedText>
       </Pressable>
 
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/test-voice')}
+        style={({ pressed }) => [styles.secondary, pressed && styles.buttonPressed]}>
+        <ThemedText type="link">Test assistant vocal</ThemedText>
+      </Pressable>
+
       <View style={styles.languageRow}>
         <ThemedText type="defaultSemiBold">{t('common.language')}</ThemedText>
         <LanguagePicker />
@@ -63,8 +70,8 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     gap: 8,
   },
-  email: { opacity: 0.7 },
-  roles: { opacity: 0.7, marginBottom: 16 },
+  email: { color: Colors.textSecondary },
+  roles: { color: Colors.textSecondary, marginBottom: 16 },
   secondary: {
     marginTop: 24,
     paddingVertical: 12,
