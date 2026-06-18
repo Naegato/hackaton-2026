@@ -75,6 +75,8 @@ export function CatalogFilters({ filters, onChange }: Props) {
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
+          accessibilityLabel={t(expanded ? 'filter.less' : 'filter.more')}
+          accessibilityState={{ expanded }}
           onPress={() => setExpanded((v) => !v)}
           style={styles.toggle}>
           <ThemedText type="link">{t(expanded ? 'filter.less' : 'filter.more')}</ThemedText>
@@ -85,7 +87,10 @@ export function CatalogFilters({ filters, onChange }: Props) {
           />
         </Pressable>
         {hasActiveFilters(filters) ? (
-          <Pressable accessibilityRole="button" onPress={() => onChange({})}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('filter.reset')}
+            onPress={() => onChange({})}>
             <ThemedText type="link">{t('filter.reset')}</ThemedText>
           </Pressable>
         ) : null}
@@ -105,7 +110,7 @@ export function CatalogFilters({ filters, onChange }: Props) {
 const styles = StyleSheet.create({
   container: { gap: 10 },
   group: { gap: 6 },
-  groupTitle: { fontSize: 13, fontWeight: '600', opacity: 0.7 },
+  groupTitle: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   chips: { gap: 8, paddingRight: 8 },
   chip: {
     borderRadius: 999,
