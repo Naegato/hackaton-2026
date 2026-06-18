@@ -28,8 +28,8 @@ export const Subscriptions: CollectionConfig = {
     beforeChange: [
       ({ data, req, operation }) => {
         // À la création, rattache l'abonnement au compte courant (sauf admin qui peut cibler un autre compte)
-        if (operation === 'create' && !isStaffFromUser(req.user as never)) {
-          data.managedBy = (req.user as { id?: string } | null)?.id
+        if (operation === 'create' && req.user && !isStaffFromUser(req.user as never)) {
+          data.managedBy = (req.user as { id?: string }).id
         }
         return data
       },

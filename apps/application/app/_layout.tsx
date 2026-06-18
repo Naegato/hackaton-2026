@@ -42,6 +42,7 @@ function RootNavigator() {
         <Stack.Screen name="test-photo" options={{ presentation: 'modal', title: 'Test photo' }} />
         <Stack.Screen name="plan/[slug]" options={{ headerShown: true }} />
         <Stack.Screen name="subscribe/[slug]" options={{ headerShown: true }} />
+        <Stack.Screen name="support" options={{ headerShown: false }} />
       </Stack.Protected>
 
       {/* Connecté mais 1ʳᵉ fois → questionnaire */}

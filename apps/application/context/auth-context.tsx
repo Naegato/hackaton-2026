@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
+import { router } from 'expo-router';
 
 import * as api from '@/lib/api';
 import { BASE_URL } from '@/lib/api';
@@ -111,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     await deleteToken();
     setUser(null);
+    router.replace('/(auth)/login');
   }
 
   const value = useMemo<AuthState>(
