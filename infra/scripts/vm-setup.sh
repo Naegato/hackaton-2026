@@ -83,6 +83,10 @@ if [[ ! -f "$RUNNER_DIR/run.sh" ]]; then
   chown -R "$RUNNER_USER:$RUNNER_USER" "$RUNNER_DIR"
 fi
 
+# Install runner OS dependencies (libicu / .NET 6 runtime required by the agent)
+echo "==> Installing runner dependencies..."
+"$RUNNER_DIR/bin/installdependencies.sh"
+
 # Configure runner
 sudo -u "$RUNNER_USER" "$RUNNER_DIR/config.sh" \
   --url "$GITHUB_REPO_URL" \
