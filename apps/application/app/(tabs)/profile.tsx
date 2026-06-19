@@ -228,6 +228,12 @@ export default function ProfileScreen() {
           />
           <Separator />
           <NavRow
+            label="Conditions Générales de Vente"
+            accessibilityHint="Ouvre les CGV"
+            onPress={() => router.push('/legal/sales-terms')}
+          />
+          <Separator />
+          <NavRow
             label="Politique de confidentialité"
             accessibilityHint="Ouvre la politique de confidentialité"
             onPress={() => router.push('/legal/privacy')}
