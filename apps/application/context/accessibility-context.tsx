@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Platform } from 'react-native';
 
 type AccessibilityState = {
   /** VoiceOver (iOS) ou TalkBack (Android) actif : on adapte l'UI pour la navigation au lecteur d'écran. */
@@ -15,6 +15,9 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (FORCE_SCREEN_READER) return;
+    // react-native-web n'a pas de vraie détection de lecteur d'écran :
+    // `isScreenReaderEnabled` y retourne toujours `true`, ce qui casserait l'UI web pour tout le monde.
+    if (Platform.OS === 'web') return;
     let active = true;
     AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
       if (active) setScreenReaderEnabled(enabled);

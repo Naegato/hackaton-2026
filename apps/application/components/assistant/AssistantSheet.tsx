@@ -26,6 +26,7 @@ import * as api from '@/lib/api';
 import { ApiError, type AssistantAction } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { ThemedText } from '@/components/themed-text';
+import { WebUnavailableModal } from '@/components/WebUnavailableModal';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useAuth } from '@/context/auth-context';
@@ -102,6 +103,7 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   // Action proposée par LÉIA, en attente de confirmation (par message « oui » ou bouton)
   const [pendingAction, setPendingAction] = useState<AssistantAction | null>(null);
+  const [webBlocked, setWebBlocked] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const lastSpokenId = useRef<string | null>(null);
 
@@ -117,6 +119,10 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
   async function toggleListening() {
     if (listening) {
       ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    if (!ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+      setWebBlocked(true);
       return;
     }
     const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
@@ -487,6 +493,8 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
           </View>
         </View>
       </Animated.View>
+
+      <WebUnavailableModal visible={webBlocked} onClose={() => setWebBlocked(false)} />
     </View>
   );
 }

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Alert, Image, StyleSheet, View } from 'react-native';
+import { Alert, Image, Platform, StyleSheet, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ThemedText } from '@/components/themed-text';
+import { WebUnavailableModal } from '@/components/WebUnavailableModal';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { ApiError, verifyPhoto } from '@/lib/api';
@@ -31,6 +32,7 @@ export function PhotoVerifier({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string | null>(null);
+  const [webBlocked, setWebBlocked] = useState(false);
 
   async function handlePicked(result: ImagePicker.ImagePickerResult) {
     if (result.canceled || !result.assets[0]) return;
@@ -73,6 +75,10 @@ export function PhotoVerifier({
   }
 
   async function pickFromCamera() {
+    if (Platform.OS === 'web') {
+      setWebBlocked(true);
+      return;
+    }
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
       Alert.alert('Permission requise', "Autorisez l'accès à la caméra pour continuer.");
@@ -112,6 +118,8 @@ export function PhotoVerifier({
         <Button label="Choisir dans la galerie" onPress={pickFromLibrary} variant="outline" size="sm" />
         <Button label="Prendre une photo" onPress={pickFromCamera} variant="secondary" size="sm" />
       </View>
+
+      <WebUnavailableModal visible={webBlocked} onClose={() => setWebBlocked(false)} />
     </Card>
   );
 }
