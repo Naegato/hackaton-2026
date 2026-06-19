@@ -2,6 +2,9 @@ import { DefaultTemplate } from '@payloadcms/next/templates'
 import type { InitPageResult } from 'payload'
 import React from 'react'
 
+import { BulkValidateButton } from './BulkValidateButton'
+import { DocumentReviewActions } from './DocumentReviewActions'
+
 type ViewProps = {
   initPageResult: InitPageResult
   params?: Record<string, string | string[]>
@@ -149,9 +152,9 @@ export default async function DossiersView({ initPageResult, params, searchParam
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {pending > 0 && (
-                      <span style={{ background: '#fef3c7', color: '#d97706', fontSize: 12, fontWeight: 700, padding: '3px 12px', borderRadius: 99 }}>
-                        {pending} en attente
-                      </span>
+                      <BulkValidateButton
+                        pendingIds={docs.filter((d) => d.status === 'pending').map((d) => String(d.id))}
+                      />
                     )}
                     <span style={{ fontSize: 13, color: '#9ca3af' }}>
                       {docs.length} doc{docs.length !== 1 ? 's' : ''}
@@ -180,6 +183,7 @@ export default async function DossiersView({ initPageResult, params, searchParam
                           {TYPE_LABEL[type] ?? type}
                         </div>
                         <Badge status={status} />
+                        {status === 'pending' && <DocumentReviewActions documentId={String(doc.id)} />}
                       </a>
                     )
                   })}

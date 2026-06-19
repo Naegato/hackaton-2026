@@ -19,7 +19,7 @@ const STEPS: { key: string; labelKey: string }[] = [
   { key: 'payment', labelKey: 'subscribe.checkout.stepPayment' },
   { key: 'confirmation', labelKey: 'subscribe.checkout.stepConfirmation' },
 ];
-const CURRENT_STEP_INDEX = 2; // "Justificatifs" — pas de vrai tunnel paiement dans cette itération
+const CURRENT_STEP_INDEX = 2; // "Justificatifs"
 
 export default function SubscribeCheckoutScreen() {
   const { t } = useLocale();
@@ -37,8 +37,8 @@ export default function SubscribeCheckoutScreen() {
     if (!result.canceled && result.assets[0]) setDocumentUri(result.assets[0].uri);
   }
 
-  function goConfirm() {
-    router.push({ pathname: '/subscribe/confirmation', params: { planId: params.planId, planName: params.planName } });
+  function goToPayment() {
+    router.push({ pathname: '/subscribe/payment', params: { planId: params.planId, planName: params.planName } });
   }
 
   return (
@@ -84,8 +84,8 @@ export default function SubscribeCheckoutScreen() {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button label={t('subscribe.checkout.continue')} onPress={goConfirm} variant="primary" size="lg" />
-        <Button label={t('subscribe.checkout.later')} onPress={goConfirm} variant="ghost" size="lg" />
+        <Button label={t('subscribe.checkout.continue')} onPress={goToPayment} variant="primary" size="lg" />
+        <Button label={t('subscribe.checkout.later')} onPress={goToPayment} variant="ghost" size="lg" />
       </View>
     </View>
   );

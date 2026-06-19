@@ -28,6 +28,7 @@ import { subscriptionDisplayStatus } from '@/lib/plan-eligibility';
 const SUB_STATUS_COLOR: Record<string, string> = {
   pending: Colors.info,
   'awaiting-documents': Colors.warning,
+  'awaiting-payment': Colors.primary,
   active: Colors.success,
   expired: Colors.textSecondary,
   cancelled: Colors.danger,
@@ -127,23 +128,34 @@ export default function WalletScreen() {
     return [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || (user?.email ?? '');
   }
 
-  // Résiliation en libre-service (confirmation obligatoire — action destructive)
+  function getDisplayStatus(sub: MySubscription) {
+    return subscriptionDisplayStatus(sub.status, sub.plan?.eligibility ?? null, docsBySub[sub.id] ?? []);
+  }
+
+  // Résiliation en libre-service (confirmation obligatoire — action destructive).
+  // Tant que l'abonnement n'est pas actif (documents en cours, prêt à payer…), il s'agit d'annuler
+  // une demande, pas de résilier un abonnement souscrit : libellés différents.
   function confirmCancel(sub: MySubscription) {
-    Alert.alert(t('cancelSub.confirmTitle'), t('cancelSub.confirmBody'), [
-      { text: t('cancelSub.no'), style: 'cancel' },
-      {
-        text: t('cancelSub.yes'),
-        style: 'destructive',
-        onPress: () => runTransferAction(sub.id, () => cancelSubscription(sub.id)),
-      },
-    ]);
+    const isActive = sub.status === 'active';
+    Alert.alert(
+      isActive ? t('cancelSub.confirmTitle') : t('cancelSub.cancelRequestTitle'),
+      isActive ? t('cancelSub.confirmBody') : t('cancelSub.cancelRequestBody'),
+      [
+        { text: t('cancelSub.no'), style: 'cancel' },
+        {
+          text: isActive ? t('cancelSub.yes') : t('cancelSub.cancelRequestYes'),
+          style: 'destructive',
+          onPress: () => runTransferAction(sub.id, () => cancelSubscription(sub.id)),
+        },
+      ],
+    );
   }
 
   function CancelButton({ sub }: { sub: MySubscription }) {
     if (showHistory || isHistoryStatus(sub.status)) return null;
     return (
       <Button
-        label={t('cancelSub.action')}
+        label={sub.status === 'active' ? t('cancelSub.action') : t('cancelSub.cancelRequestAction')}
         variant="ghost"
         size="sm"
         style={styles.transferBtn}
@@ -153,16 +165,31 @@ export default function WalletScreen() {
     );
   }
 
+  // Le paiement (fictif) ne se débloque qu'une fois tous les documents requis validés par le staff.
+  function PayButton({ sub }: { sub: MySubscription }) {
+    if (showHistory || getDisplayStatus(sub) !== 'awaiting-payment') return null;
+    return (
+      <Button
+        label={t('subscribe.payment.pay')}
+        variant="primary"
+        size="sm"
+        style={styles.transferBtn}
+        onPress={() =>
+          router.push({
+            pathname: '/subscribe/payment',
+            params: { planId: sub.plan?.id, planName: sub.plan?.name, subscriptionId: sub.id },
+          })
+        }
+      />
+    );
+  }
+
   const visible = subs.filter((s) => (showHistory ? isHistoryStatus(s.status) : !isHistoryStatus(s.status)));
   const mine = visible.filter(isForSelf);
   const relatives = visible.filter((s) => !isForSelf(s));
 
   function renderCard(sub: MySubscription) {
-    const displayStatus = subscriptionDisplayStatus(
-      sub.status,
-      sub.plan?.eligibility ?? null,
-      docsBySub[sub.id] ?? [],
-    );
+    const displayStatus = getDisplayStatus(sub);
     return (
       <NavigoCard
         key={sub.id}
@@ -222,7 +249,10 @@ export default function WalletScreen() {
             ) : null}
           </>
         ) : null}
-        <CancelButton sub={sub} />
+        <View style={styles.transferActions}>
+          <PayButton sub={sub} />
+          <CancelButton sub={sub} />
+        </View>
       </View>
     );
   }
@@ -294,7 +324,10 @@ export default function WalletScreen() {
                   {mine.map((sub) => (
                     <View key={sub.id} style={styles.relativeItem}>
                       {renderCard(sub)}
-                      <CancelButton sub={sub} />
+                      <View style={styles.transferActions}>
+                        <PayButton sub={sub} />
+                        <CancelButton sub={sub} />
+                      </View>
                     </View>
                   ))}
                 </View>

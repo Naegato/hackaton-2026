@@ -15,6 +15,7 @@ export default function SubscribeLayout() {
       <Stack.Screen name="ai" options={{ title: '' }} />
       <Stack.Screen name="result" options={{ title: '' }} />
       <Stack.Screen name="checkout" options={{ title: '' }} />
+      <Stack.Screen name="payment" options={{ title: '' }} />
       <Stack.Screen name="confirmation" options={{ title: '', headerBackVisible: false }} />
       <Stack.Screen name="catalogue" options={{ title: '' }} />
     </Stack>

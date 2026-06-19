@@ -19,6 +19,8 @@ import { googleOAuthCallback, googleOAuthRedirect } from './endpoints/oauth-goog
 import { verifyPhoto } from './endpoints/verify-photo'
 import { assistantEndpoint } from './endpoints/assistant'
 import { deleteAccountEndpoint } from './endpoints/delete-account'
+import { reviewSubscriptionDocument } from './endpoints/review-subscription-document'
+import { bulkValidateDocuments } from './endpoints/bulk-validate-documents'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -66,6 +68,8 @@ export default buildConfig({
     verifyPhoto,
     assistantEndpoint,
     deleteAccountEndpoint,
+    reviewSubscriptionDocument,
+    bulkValidateDocuments,
   ],
   editor: lexicalEditor(),
   // CORS : origines autorisées à appeler l'API.

@@ -72,7 +72,6 @@ function RootNavigator() {
         <Stack.Screen name="preferences" options={{ presentation: 'modal', title: 'Préférences' }} />
         <Stack.Screen name="test-photo" options={{ presentation: 'modal', title: 'Test photo' }} />
         <Stack.Screen name="plan/[slug]" options={{ headerShown: true }} />
-        <Stack.Screen name="subscribe/[slug]" options={{ headerShown: true }} />
         <Stack.Screen name="support" options={{ headerShown: false }} />
         <Stack.Screen name="legal/[slug]" options={{ headerShown: false }} />
         <Stack.Screen name="subscription/[id]" options={{ headerShown: false }} />

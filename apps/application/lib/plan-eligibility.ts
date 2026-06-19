@@ -20,7 +20,14 @@ export function requiredDocumentTypes(plan: Pick<Plan, 'eligibility'>): DocType[
  * (absent ou refusé) est présenté comme « en attente des documents » : l'usager doit agir.
  * Une fois tous les documents fournis, il repasse en « en cours de validation » (côté staff).
  */
-export type DisplayStatus = 'pending' | 'awaiting-documents' | 'active' | 'expired' | 'cancelled' | string;
+export type DisplayStatus =
+  | 'pending'
+  | 'awaiting-documents'
+  | 'awaiting-payment'
+  | 'active'
+  | 'expired'
+  | 'cancelled'
+  | string;
 
 export function subscriptionDisplayStatus(
   status: string,
@@ -29,11 +36,16 @@ export function subscriptionDisplayStatus(
 ): DisplayStatus {
   if (status !== 'pending') return status;
   const byType = new Map(docs.map((d) => [d.type, d]));
-  const needsDocuments = requiredDocumentTypes({ eligibility }).some((ty) => {
+  const required = requiredDocumentTypes({ eligibility });
+  const needsDocuments = required.some((ty) => {
     const d = byType.get(ty);
     return !d || d.status === 'refused';
   });
-  return needsDocuments ? 'awaiting-documents' : 'pending';
+  if (needsDocuments) return 'awaiting-documents';
+  // Tous les documents requis ont été fournis : une fois tous validés par le staff,
+  // l'usager peut passer au paiement. Sinon, la validation est encore en cours.
+  const allValidated = required.every((ty) => byType.get(ty)?.status === 'validated');
+  return allValidated ? 'awaiting-payment' : 'pending';
 }
 
 /** Conditions d'éligibilité lisibles, dérivées des critères de l'offre. */

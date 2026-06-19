@@ -17,14 +17,16 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/Colors';
 import { Radius, Shadow, Spacing } from '@/constants/Spacing';
+import { subscriptionDisplayStatus } from '@/lib/plan-eligibility';
 
 // ---------------------------------------------------------------------------
 // Constantes d'affichage
 // ---------------------------------------------------------------------------
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string }> = {
-  pending:              { label: 'En attente',         bg: '#FEF3C7', color: '#92400E' },
+  pending:              { label: 'En cours de validation', bg: '#FEF3C7', color: '#92400E' },
   'awaiting-documents': { label: 'Documents requis',   bg: '#FEF3C7', color: '#92400E' },
+  'awaiting-payment':   { label: 'Prêt à payer',       bg: '#DBEAFE', color: '#1D4ED8' },
   active:               { label: 'Actif',              bg: '#DCFCE7', color: '#166534' },
   expired:              { label: 'Expiré',             bg: Colors.surface, color: Colors.textSecondary },
   cancelled:            { label: 'Résilié',            bg: '#FEE2E2', color: '#DC2626' },
@@ -63,7 +65,7 @@ function formatDate(iso: string | null | undefined): string {
 }
 
 const isCancellable = (status: string) =>
-  status === 'active' || status === 'pending' || status === 'awaiting-documents';
+  status === 'active' || status === 'pending' || status === 'awaiting-documents' || status === 'awaiting-payment';
 
 // ---------------------------------------------------------------------------
 // Sous-composants
@@ -77,7 +79,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <View style={styles.sectionCard} accessibilityRole="group">
+    <View style={styles.sectionCard}>
       <ThemedText style={styles.sectionTitle} accessibilityRole="header">
         {title}
       </ThemedText>
@@ -178,6 +180,10 @@ export default function SubscriptionDetailScreen() {
     .filter(Boolean)
     .join(' ') || '—';
 
+  const displayStatus = detail
+    ? subscriptionDisplayStatus(detail.status, detail.plan?.eligibility ?? null, docs)
+    : 'pending';
+
   return (
     <ThemedView style={styles.container}>
       {/* En-tête */}
@@ -196,7 +202,7 @@ export default function SubscriptionDetailScreen() {
           <ThemedText style={styles.pageTitle} accessibilityRole="header" numberOfLines={2}>
             {detail?.plan?.name ?? 'Abonnement'}
           </ThemedText>
-          {detail ? <StatusBadge status={detail.status} /> : null}
+          {detail ? <StatusBadge status={displayStatus} /> : null}
         </View>
       </View>
 
@@ -279,17 +285,37 @@ export default function SubscriptionDetailScreen() {
             </SectionCard>
           ) : null}
 
-          {/* Résiliation */}
+          {/* Paiement : débloqué une fois tous les documents requis validés par le staff */}
+          {displayStatus === 'awaiting-payment' ? (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: '/subscribe/payment',
+                  params: { planId: detail.plan?.id, planName: detail.plan?.name, subscriptionId: detail.id },
+                })
+              }
+              style={styles.payBtn}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Payer cet abonnement"
+            >
+              <ThemedText style={styles.payBtnLabel}>Payer</ThemedText>
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Annulation (demande en cours) / Résiliation (abonnement actif) */}
           {isCancellable(detail.status) ? (
             <TouchableOpacity
               onPress={() => setShowCancel(true)}
               style={styles.cancelBtn}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Résilier cet abonnement"
+              accessibilityLabel={detail.status === 'active' ? 'Résilier cet abonnement' : 'Annuler cette demande'}
               accessibilityHint="Cette action est irréversible"
             >
-              <ThemedText style={styles.cancelBtnLabel}>Résilier l'abonnement</ThemedText>
+              <ThemedText style={styles.cancelBtnLabel}>
+                {detail.status === 'active' ? "Résilier l'abonnement" : 'Annuler la demande'}
+              </ThemedText>
             </TouchableOpacity>
           ) : null}
         </ScrollView>
@@ -307,11 +333,12 @@ export default function SubscriptionDetailScreen() {
         <View style={styles.overlay}>
           <View style={styles.dialog}>
             <ThemedText style={styles.dialogTitle} accessibilityRole="header">
-              Résilier votre abonnement ?
+              {detail?.status === 'active' ? 'Résilier votre abonnement ?' : 'Annuler cette demande ?'}
             </ThemedText>
             <ThemedText style={styles.dialogMsg}>
-              Votre abonnement{detail?.plan?.name ? ` « ${detail.plan.name} »` : ''} sera résilié
-              immédiatement. Cette action est irréversible.
+              {detail?.status === 'active'
+                ? `Votre abonnement${detail?.plan?.name ? ` « ${detail.plan.name} »` : ''} sera résilié immédiatement. Cette action est irréversible.`
+                : `Votre demande d'abonnement${detail?.plan?.name ? ` « ${detail.plan.name} »` : ''} sera annulée immédiatement. Cette action est irréversible.`}
             </ThemedText>
 
             {cancelError ? (
@@ -330,13 +357,15 @@ export default function SubscriptionDetailScreen() {
               style={[styles.dialogConfirm, cancelling && styles.dialogBtnDisabled]}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Confirmer la résiliation"
+              accessibilityLabel={detail?.status === 'active' ? 'Confirmer la résiliation' : "Confirmer l'annulation"}
               accessibilityState={{ disabled: cancelling, busy: cancelling }}
             >
               {cancelling ? (
-                <ActivityIndicator color={Colors.white} accessibilityLabel="Résiliation en cours" />
+                <ActivityIndicator color={Colors.white} accessibilityLabel="Action en cours" />
               ) : (
-                <ThemedText style={styles.dialogConfirmLabel}>Confirmer la résiliation</ThemedText>
+                <ThemedText style={styles.dialogConfirmLabel}>
+                  {detail?.status === 'active' ? 'Confirmer la résiliation' : "Confirmer l'annulation"}
+                </ThemedText>
               )}
             </TouchableOpacity>
 
@@ -467,6 +496,18 @@ const styles = StyleSheet.create({
   docBadge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 2, alignSelf: 'flex-start' },
   docBadgeText: { fontSize: 11, fontWeight: '700' },
   docRefusal: { fontSize: 12, color: Colors.textSecondary, lineHeight: 16, fontStyle: 'italic' },
+
+  // Bouton paiement
+  payBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radius.lg,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    marginTop: Spacing.sm,
+  },
+  payBtnLabel: { color: Colors.white, fontSize: 15, fontWeight: '600' },
 
   // Bouton résiliation
   cancelBtn: {
