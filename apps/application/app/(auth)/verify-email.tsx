@@ -105,7 +105,15 @@ export default function VerifyEmailScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', gap: 16, padding: 24 },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    gap: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+  },
   subtitle: { opacity: 0.7 },
   error: { color: '#d33' },
 });

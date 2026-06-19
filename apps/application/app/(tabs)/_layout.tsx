@@ -1,20 +1,21 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
+import { Colors } from '@/constants/Colors';
 import { AssistantFab } from '@/components/assistant/AssistantFab';
 import { AssistantSheet } from '@/components/assistant/AssistantSheet';
 import { useAccessibilityMode } from '@/context/accessibility-context';
 import { useLocale } from '@/context/locale-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+const WIDE_BREAKPOINT = 768;
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const { t } = useLocale();
   const { screenReaderEnabled } = useAccessibilityMode();
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
 
   if (screenReaderEnabled) {
     return <AssistantSheet visible fullScreen onClose={() => {}} />;
@@ -24,9 +25,18 @@ export default function TabLayout() {
     <View style={styles.flex}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          tabBarActiveTintColor: Colors.primary,
           headerShown: false,
           tabBarButton: HapticTab,
+          ...(isWide
+            ? {
+                tabBarPosition: 'left' as const,
+                tabBarVariant: 'material' as const,
+                tabBarLabelPosition: 'beside-icon' as const,
+                tabBarStyle: styles.sidebar,
+                tabBarItemStyle: styles.sidebarItem,
+              }
+            : null),
         }}>
         <Tabs.Screen
           name="index"
@@ -64,4 +74,15 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  sidebar: {
+    width: 240,
+    borderRightWidth: 1,
+    borderRightColor: Colors.border,
+    backgroundColor: Colors.white,
+    paddingTop: 24,
+  },
+  sidebarItem: {
+    borderRadius: 12,
+    marginHorizontal: 12,
+  },
 });

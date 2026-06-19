@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Radius, Shadow, Spacing } from '@/constants/Spacing';
 import { Typography } from '@/constants/Typography';
 import { useLocale } from '@/context/locale-context';
+import { WebUnavailableModal } from '@/components/WebUnavailableModal';
 
 type ImageSourceSheetProps = {
   visible: boolean;
@@ -16,47 +18,60 @@ type ImageSourceSheetProps = {
 /** Action sheet pour choisir la source d'une image (galerie ou appareil photo). */
 export function ImageSourceSheet({ visible, title, onSelect, onClose }: ImageSourceSheetProps) {
   const { t } = useLocale();
+  const [webBlocked, setWebBlocked] = useState(false);
+
+  function handleCamera() {
+    if (Platform.OS === 'web') {
+      setWebBlocked(true);
+      return;
+    }
+    onSelect('camera');
+  }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <View style={styles.wrap}>
-          <Pressable style={styles.card} onPress={() => {}}>
-            <View style={styles.handle} />
-            <Text style={styles.title}>{title}</Text>
+    <>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+        <Pressable style={styles.backdrop} onPress={onClose}>
+          <View style={styles.wrap}>
+            <Pressable style={styles.card} onPress={() => {}}>
+              <View style={styles.handle} />
+              <Text style={styles.title}>{title}</Text>
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onSelect('library')}
+                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}>
+                <View style={styles.iconWrap}>
+                  <Ionicons name="images-outline" size={22} color={Colors.primary} />
+                </View>
+                <Text style={styles.optionLabel}>{t('subscribe.photo.library')}</Text>
+              </Pressable>
+
+              <View style={styles.separator} />
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleCamera}
+                style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}>
+                <View style={styles.iconWrap}>
+                  <Ionicons name="camera-outline" size={22} color={Colors.primary} />
+                </View>
+                <Text style={styles.optionLabel}>{t('subscribe.photo.camera')}</Text>
+              </Pressable>
+            </Pressable>
 
             <Pressable
               accessibilityRole="button"
-              onPress={() => onSelect('library')}
-              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}>
-              <View style={styles.iconWrap}>
-                <Ionicons name="images-outline" size={22} color={Colors.primary} />
-              </View>
-              <Text style={styles.optionLabel}>{t('subscribe.photo.library')}</Text>
+              onPress={onClose}
+              style={({ pressed }) => [styles.cancel, pressed && styles.optionPressed]}>
+              <Text style={styles.cancelLabel}>{t('assistant.cancel')}</Text>
             </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
 
-            <View style={styles.separator} />
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onSelect('camera')}
-              style={({ pressed }) => [styles.option, pressed && styles.optionPressed]}>
-              <View style={styles.iconWrap}>
-                <Ionicons name="camera-outline" size={22} color={Colors.primary} />
-              </View>
-              <Text style={styles.optionLabel}>{t('subscribe.photo.camera')}</Text>
-            </Pressable>
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={onClose}
-            style={({ pressed }) => [styles.cancel, pressed && styles.optionPressed]}>
-            <Text style={styles.cancelLabel}>{t('assistant.cancel')}</Text>
-          </Pressable>
-        </View>
-      </Pressable>
-    </Modal>
+      <WebUnavailableModal visible={webBlocked} onClose={() => setWebBlocked(false)} />
+    </>
   );
 }
 

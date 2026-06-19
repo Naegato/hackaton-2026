@@ -85,7 +85,7 @@ export default function CatalogScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, paddingTop: 64, gap: 14 },
-  error: { color: '#d33', marginTop: 24 },
+  content: { padding: 20, paddingTop: 64, gap: 14, maxWidth: 800, alignSelf: 'center', width: '100%' },
+  error: { color: '#DC2626', marginTop: 24 },
   empty: { marginTop: 24, opacity: 0.6, textAlign: 'center' },
 });

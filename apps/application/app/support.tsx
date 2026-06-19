@@ -309,6 +309,9 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: Spacing['2xl'],
     gap: 0,
+    maxWidth: 800,
+    alignSelf: 'center',
+    width: '100%',
   },
 
   // En-tête
@@ -479,7 +482,7 @@ const styles = StyleSheet.create({
   successBox: {
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#86efac',
+    borderColor: Colors.success,
     backgroundColor: Colors.successLight,
     padding: Spacing['2xl'],
     alignItems: 'center',
@@ -488,11 +491,11 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#15803d',
+    color: Colors.text,
   },
   successMsg: {
     fontSize: 14,
-    color: '#166534',
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },

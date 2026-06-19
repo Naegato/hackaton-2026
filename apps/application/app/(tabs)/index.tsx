@@ -130,7 +130,7 @@ export default function OffersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, paddingTop: 64, gap: 14 },
+  content: { padding: 20, paddingTop: 64, gap: 14, maxWidth: 800, alignSelf: 'center', width: '100%' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   headerTitle: { flexShrink: 1 },
   prefsBtn: {
@@ -153,5 +153,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pressed: { opacity: 0.6 },
-  error: { color: '#d33', marginTop: 24 },
+  error: { color: '#DC2626', marginTop: 24 },
 });

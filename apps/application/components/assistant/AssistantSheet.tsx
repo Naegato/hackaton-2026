@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +27,7 @@ import * as api from '@/lib/api';
 import { ApiError, type AssistantAction } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { ThemedText } from '@/components/themed-text';
+import { WebUnavailableModal } from '@/components/WebUnavailableModal';
 import { Colors } from '@/constants/Colors';
 import { Radius, Spacing } from '@/constants/Spacing';
 import { useAuth } from '@/context/auth-context';
@@ -62,8 +64,9 @@ const SWITCH_CONFIRM: Record<'fr' | 'en' | 'es' | 'zh', string> = {
   zh: '好的，我现在起用中文回复。请问有什么可以帮您？',
 };
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const SHEET_HEIGHT = SCREEN_HEIGHT * 0.72;
+// Valeur statique pour l'initialisation de l'Animated.Value (Dimensions.get est synchrone au mount).
+// La hauteur dynamique est recalculée via useWindowDimensions à chaque render.
+const INITIAL_SHEET_HEIGHT = Dimensions.get('window').height * 0.72;
 
 const QUICK_TOPICS = [
   { key: 'assistant.topics.subscriptions', q: 'Quels abonnements sont disponibles ?' },
@@ -91,7 +94,9 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
   const { t, locale, setLocale } = useLocale();
   const { user, refreshUser } = useAuth();
   const pathname = usePathname();
-  const translateY      = useRef(new Animated.Value(SHEET_HEIGHT)).current;
+  const { height: screenHeight } = useWindowDimensions();
+  const sheetHeight = screenHeight * 0.72;
+  const translateY      = useRef(new Animated.Value(INITIAL_SHEET_HEIGHT)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   const [messages,   setMessages]   = useState<Message[]>([]);
@@ -102,6 +107,7 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   // Action proposée par LÉIA, en attente de confirmation (par message « oui » ou bouton)
   const [pendingAction, setPendingAction] = useState<AssistantAction | null>(null);
+  const [webBlocked, setWebBlocked] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const lastSpokenId = useRef<string | null>(null);
 
@@ -117,6 +123,10 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
   async function toggleListening() {
     if (listening) {
       ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    if (Platform.OS === 'web' || !ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+      if (Platform.OS === 'web') setWebBlocked(true);
       return;
     }
     const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
@@ -191,7 +201,7 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
       ]).start();
     } else {
       Animated.parallel([
-        Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 280, easing: Easing.in(Easing.ease), useNativeDriver: true }),
+        Animated.timing(translateY, { toValue: sheetHeight, duration: 280, easing: Easing.in(Easing.ease), useNativeDriver: true }),
         Animated.timing(backdropOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
       ]).start(() => setMounted(false));
     }
@@ -344,7 +354,7 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
       <Animated.View
         style={[
           fullScreen ? styles.sheetFull : styles.sheet,
-          !fullScreen && { transform: [{ translateY }] },
+          !fullScreen && { height: sheetHeight, transform: [{ translateY }] },
         ]}
       >
         <View style={[styles.header, fullScreen && styles.headerFull]}>
@@ -487,6 +497,8 @@ export function AssistantSheet({ visible, onClose, fullScreen = false }: Props) 
           </View>
         </View>
       </Animated.View>
+
+      <WebUnavailableModal visible={webBlocked} onClose={() => setWebBlocked(false)} />
     </View>
   );
 }
@@ -502,7 +514,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: SHEET_HEIGHT,
+    height: INITIAL_SHEET_HEIGHT,
     backgroundColor: Colors.background,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,

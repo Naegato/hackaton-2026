@@ -151,10 +151,10 @@ export default function RelativeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, paddingTop: 24, gap: 14 },
+  content: { padding: 20, paddingTop: 24, gap: 14, maxWidth: 640, alignSelf: 'center', width: '100%' },
   forWhom: { fontSize: 15, opacity: 0.7 },
   none: { opacity: 0.6, marginTop: 24 },
-  error: { color: '#d33', marginTop: 24 },
+  error: { color: '#DC2626', marginTop: 24 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 },
   doneTitle: { textAlign: 'center' },
   doneMsg: { textAlign: 'center', opacity: 0.7, marginBottom: 8 },
