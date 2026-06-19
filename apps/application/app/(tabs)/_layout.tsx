@@ -4,18 +4,14 @@ import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors as IDFColors } from '@/constants/Colors';
-import { Colors } from '@/constants/theme';
+import { Colors } from '@/constants/Colors';
 import { AssistantFab } from '@/components/assistant/AssistantFab';
 import { AssistantSheet } from '@/components/assistant/AssistantSheet';
 import { useAccessibilityMode } from '@/context/accessibility-context';
 import { useLocale } from '@/context/locale-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
 const WIDE_BREAKPOINT = 768;
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const { t } = useLocale();
   const { screenReaderEnabled } = useAccessibilityMode();
   const { width } = useWindowDimensions();
@@ -29,7 +25,7 @@ export default function TabLayout() {
     <View style={styles.flex}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          tabBarActiveTintColor: Colors.primary,
           headerShown: false,
           tabBarButton: HapticTab,
           ...(isWide
@@ -81,8 +77,8 @@ const styles = StyleSheet.create({
   sidebar: {
     width: 240,
     borderRightWidth: 1,
-    borderRightColor: IDFColors.border,
-    backgroundColor: IDFColors.white,
+    borderRightColor: Colors.border,
+    backgroundColor: Colors.white,
     paddingTop: 24,
   },
   sidebarItem: {

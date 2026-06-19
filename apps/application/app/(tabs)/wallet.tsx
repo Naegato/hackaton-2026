@@ -1,7 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { NavigoCard } from '@/components/navigo-card';
 import { RelativeCta } from '@/components/relative-cta';
@@ -50,6 +50,7 @@ export default function WalletScreen() {
   const [showHistory, setShowHistory] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [helpOpenId, setHelpOpenId] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<MySubscription | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -136,19 +137,7 @@ export default function WalletScreen() {
   // Tant que l'abonnement n'est pas actif (documents en cours, prêt à payer…), il s'agit d'annuler
   // une demande, pas de résilier un abonnement souscrit : libellés différents.
   function confirmCancel(sub: MySubscription) {
-    const isActive = sub.status === 'active';
-    Alert.alert(
-      isActive ? t('cancelSub.confirmTitle') : t('cancelSub.cancelRequestTitle'),
-      isActive ? t('cancelSub.confirmBody') : t('cancelSub.cancelRequestBody'),
-      [
-        { text: t('cancelSub.no'), style: 'cancel' },
-        {
-          text: isActive ? t('cancelSub.yes') : t('cancelSub.cancelRequestYes'),
-          style: 'destructive',
-          onPress: () => runTransferAction(sub.id, () => cancelSubscription(sub.id)),
-        },
-      ],
-    );
+    setCancelTarget(sub);
   }
 
   function CancelButton({ sub }: { sub: MySubscription }) {
@@ -176,7 +165,7 @@ export default function WalletScreen() {
         style={styles.transferBtn}
         onPress={() =>
           router.push({
-            pathname: '/subscribe/payment',
+            pathname: '/subscribe/payment' as never,
             params: { planId: sub.plan?.id, planName: sub.plan?.name, subscriptionId: sub.id },
           })
         }
@@ -269,11 +258,11 @@ export default function WalletScreen() {
             accessibilityState={{ selected: showHistory }}
             onPress={() => setShowHistory((v) => !v)}
             style={[styles.histBtn, showHistory && styles.histBtnOn]}>
-            <MaterialIcons name="history" size={18} color={showHistory ? '#fff' : Colors.primary} />
+            <MaterialIcons name="history" size={18} color={showHistory ? Colors.white : Colors.primary} />
             <ThemedText
               style={[styles.histText, showHistory && styles.histTextOn]}
-              lightColor={showHistory ? '#fff' : Colors.primary}
-              darkColor={showHistory ? '#fff' : Colors.primary}>
+              lightColor={showHistory ? Colors.white : Colors.primary}
+              darkColor={showHistory ? Colors.white : Colors.primary}>
               {t('mysubs.history')}
             </ThemedText>
           </Pressable>
@@ -351,13 +340,58 @@ export default function WalletScreen() {
         {/* Souscrire pour un proche : formulaire dédié → sélection d'offre → abonnement au nom du proche */}
         <RelativeCta style={styles.relativeCta} />
       </ScrollView>
+
+      {/* Modal de confirmation de résiliation — remplace Alert.alert pour compatibilité web */}
+      <Modal
+        visible={cancelTarget !== null}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        accessibilityViewIsModal
+        onRequestClose={() => setCancelTarget(null)}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.dialog}>
+            <Text style={styles.dialogTitle}>
+              {cancelTarget?.status === 'active' ? t('cancelSub.confirmTitle') : t('cancelSub.cancelRequestTitle')}
+            </Text>
+            <Text style={styles.dialogBody}>
+              {cancelTarget?.status === 'active' ? t('cancelSub.confirmBody') : t('cancelSub.cancelRequestBody')}
+            </Text>
+            <Pressable
+              style={({ pressed }) => [styles.dialogConfirm, pressed && { opacity: 0.8 }]}
+              disabled={cancelTarget ? busyId === cancelTarget.id : false}
+              onPress={() => {
+                if (!cancelTarget) return;
+                const sub = cancelTarget;
+                setCancelTarget(null);
+                void runTransferAction(sub.id, () => cancelSubscription(sub.id));
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={cancelTarget?.status === 'active' ? t('cancelSub.yes') : t('cancelSub.cancelRequestYes')}
+            >
+              <Text style={styles.dialogConfirmLabel}>
+                {cancelTarget?.status === 'active' ? t('cancelSub.yes') : t('cancelSub.cancelRequestYes')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.dialogCancel, pressed && { opacity: 0.8 }]}
+              onPress={() => setCancelTarget(null)}
+              accessibilityRole="button"
+              accessibilityLabel={t('cancelSub.no')}
+            >
+              <Text style={styles.dialogCancelLabel}>{t('cancelSub.no')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, paddingTop: 64, gap: 20 },
+  content: { padding: 20, paddingTop: 64, gap: 20, maxWidth: 800, alignSelf: 'center', width: '100%' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   histBtn: {
     flexDirection: 'row',
@@ -371,11 +405,11 @@ const styles = StyleSheet.create({
   },
   histBtnOn: { backgroundColor: Colors.primary },
   histText: { fontSize: 13, fontWeight: '600' },
-  histTextOn: { color: '#fff' },
+  histTextOn: { color: Colors.white },
   section: { gap: 12 },
   cards: { gap: 14 },
   none: { opacity: 0.6 },
-  error: { color: '#d33', marginTop: 24 },
+  error: { color: '#DC2626', marginTop: 24 },
   relativeCta: { marginTop: 8 },
   incomingBox: {
     gap: 12,
@@ -400,4 +434,41 @@ const styles = StyleSheet.create({
   },
   transferRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   pendingText: { flex: 1, fontSize: 13, opacity: 0.7 },
+  overlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  dialog: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 360,
+    gap: 12,
+  },
+  dialogTitle: { fontSize: 17, fontWeight: '700', color: Colors.text, textAlign: 'center' },
+  dialogBody: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20 },
+  dialogConfirm: {
+    marginTop: 4,
+    backgroundColor: '#DC2626', // #EF4444 (Colors.danger) = 3.57:1 ✗ — #DC2626 = 4.61:1 ✓ RGAA AA
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  dialogConfirmLabel: { color: Colors.white, fontWeight: '600', fontSize: 15 },
+  dialogCancel: {
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    minHeight: 48,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  dialogCancelLabel: { fontSize: 15, color: Colors.textSecondary, fontWeight: '500' },
 });

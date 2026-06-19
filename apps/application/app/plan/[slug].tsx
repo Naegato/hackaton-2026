@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingBottom: 24 },
   hero: { width: '100%', height: 200, backgroundColor: Colors.borderLight },
-  body: { padding: 20, gap: 10 },
+  body: { padding: 20, gap: 10, maxWidth: 800, alignSelf: 'center', width: '100%' },
   price: { fontSize: 18, opacity: 0.9 },
   description: {
     fontSize: 15,

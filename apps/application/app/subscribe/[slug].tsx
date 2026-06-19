@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DocumentExampleButton } from '@/components/document-example-button';
 import { ImageSourceSheet } from '@/components/ImageSourceSheet';
@@ -60,6 +60,7 @@ async function pickImage(
   options: { base64?: boolean } = {},
 ): Promise<ImagePicker.ImagePickerResult | null> {
   if (source === 'camera') {
+    if (Platform.OS === 'web') return null;
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
       Alert.alert('Permission', "Autorisez l'accès à la caméra pour ajouter un document.");
@@ -379,7 +380,7 @@ export default function SubscribeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: 20, gap: 14 },
+  content: { padding: 20, gap: 14, maxWidth: 720, alignSelf: 'center', width: '100%' },
   intro: { opacity: 0.7 },
   forWhomBox: { gap: 10 },
   segment: {

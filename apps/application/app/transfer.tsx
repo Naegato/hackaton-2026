@@ -91,7 +91,7 @@ export default function TransferScreen() {
           />
 
           {error ? (
-            <ThemedText style={styles.error} accessibilityLiveRegion="polite">
+            <ThemedText style={styles.error} accessibilityLiveRegion="polite" accessibilityRole="alert">
               {error}
             </ThemedText>
           ) : null}
@@ -105,7 +105,7 @@ export default function TransferScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', gap: 16, padding: 24 },
+  content: { flexGrow: 1, justifyContent: 'center', gap: 16, padding: 24, maxWidth: 640, alignSelf: 'center', width: '100%' },
   subtitle: { opacity: 0.7 },
   recap: {
     borderWidth: 1,
@@ -116,5 +116,5 @@ const styles = StyleSheet.create({
   },
   recapHolder: { opacity: 0.7, fontSize: 14 },
   note: { fontSize: 13, opacity: 0.6 },
-  error: { color: '#d33' },
+  error: { color: '#DC2626' },
 });
