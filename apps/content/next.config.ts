@@ -7,6 +7,10 @@ const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  // Promoted from experimental in Next.js 16 — required for correct file
+  // tracing in a monorepo so node_modules are traced from the workspace root.
+  outputFileTracingRoot: path.resolve(dirname, '../../'),
   images: {
     localPatterns: [
       {

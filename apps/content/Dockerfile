@@ -1,71 +1,53 @@
-# To use this Dockerfile, you have to set `output: 'standalone'` in your next.config.mjs file.
-# From https://github.com/vercel/next.js/blob/canary/examples/with-docker/Dockerfile
+# Build context: repo root  →  docker build -f apps/content/Dockerfile .
+# Requires next.config.ts to have output: 'standalone'
 
-FROM node:22.17.0-alpine AS base
+# ── Stage 1: install dependencies ────────────────────────────────────────────
+FROM oven/bun:1.3.14-alpine AS deps
+WORKDIR /repo
 
-# Install dependencies only when needed
-FROM base AS deps
-# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
+# Copy workspace manifests first for layer-cache efficiency
+COPY package.json bun.lock ./
+COPY apps/content/package.json     ./apps/content/
+COPY apps/application/package.json ./apps/application/
+COPY packages/docker/package.json  ./packages/docker/
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN bun install --frozen-lockfile
 
+# ── Stage 2: build ───────────────────────────────────────────────────────────
+FROM oven/bun:1.3.14-alpine AS builder
+WORKDIR /repo
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/apps/content/node_modules ./apps/content/node_modules
+
 COPY . .
 
-# Next.js collects completely anonymous telemetry data about general usage.
-# Learn more here: https://nextjs.org/telemetry
-# Uncomment the following line in case you want to disable telemetry during the build.
-# ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--no-deprecation --max-old-space-size=4096"
 
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN cd apps/content && bun run build
 
-# Production image, copy all the files and run next
-FROM base AS runner
+# ── Stage 3: runtime ─────────────────────────────────────────────────────────
+# Use Node (not bun) — Next.js standalone server.js runs on Node
+FROM node:22-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-# Uncomment the following line in case you want to disable telemetry during runtime.
-# ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser  --system --uid 1001 nextjs
 
-# Remove this line if you do not have this folder
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# With outputFileTracingRoot set to the monorepo root, standalone output
+# preserves the monorepo path prefix: apps/content/server.js
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/content/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /repo/apps/content/.next/static      ./apps/content/.next/static
 
 USER nextjs
 
+# Internal port — published as 3001 in the swarm stack
 EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-ENV PORT 3000
-
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD HOSTNAME="0.0.0.0" node server.js
+CMD ["node", "apps/content/server.js"]

@@ -1,0 +1,127 @@
+# Docker Swarm stack — hackaton-2k26 / content API
+#
+# Deploy:
+#   IMAGE_TAG=sha-<commit> docker stack deploy \
+#     --with-registry-auth \
+#     --compose-file infra/swarm/stack.yml \
+#     hackaton
+#
+# Port mapping: 3001 → container 3000 (host:3000 is already occupied).
+# Published via the swarm routing mesh (ingress) so an external cloudflared
+# (running a layer above this VM) can reach it at http://<VM-IP>:3001 and it
+# load-balances across the api replicas.
+# Secrets must be pre-created on the swarm — see infra/scripts/secrets-update.sh
+
+version: "3.9"
+
+services:
+  # ── Next.js + Payload CMS API ───────────────────────────────────────────────
+  api:
+    image: ghcr.io/naegato/hackaton-2026/content:${IMAGE_TAG:-latest}
+    ports:
+      - target: 3000
+        published: 3001
+        protocol: tcp
+        mode: ingress     # routing mesh — load-balances across replicas
+    environment:
+      NODE_ENV: production
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Non-sensitive runtime config — override via swarm config or env file
+      SMTP_HOST: ${SMTP_HOST:-smtp}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      APP_OAUTH_REDIRECT_URI: ${APP_OAUTH_REDIRECT_URI}
+    secrets:
+      - payload_secret
+      - database_url
+      - google_client_id
+      - google_client_secret
+      - mistral_api_key
+    # Secrets are mounted at /run/secrets/<name> — read them via env wrapper
+    # next.config.ts / payload.config.ts should read from env; the wrapper
+    # below exports each secret file as an env var before starting the server.
+    command: >
+      sh -c "
+        export PAYLOAD_SECRET=$$(cat /run/secrets/payload_secret) &&
+        export DATABASE_URL=$$(cat /run/secrets/database_url) &&
+        export GOOGLE_CLIENT_ID=$$(cat /run/secrets/google_client_id) &&
+        export GOOGLE_CLIENT_SECRET=$$(cat /run/secrets/google_client_secret) &&
+        export MISTRAL_API_KEY=$$(cat /run/secrets/mistral_api_key) &&
+        node apps/content/server.js
+      "
+    networks:
+      - backend
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 15s
+        order: start-first   # zero-downtime rolling update
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        order: start-first
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 256M
+    depends_on:
+      - mongodb
+
+  # ── MongoDB ─────────────────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:8.2
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-hackaton}
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - backend
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          # Pin to manager so the named volume is always on the same node
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+      resources:
+        limits:
+          memory: 512M
+
+# Note: external traffic is handled by a cloudflared instance running a layer
+# above this VM (Proxmox host / edge). It routes the public hostname to
+# http://<VM-IP>:3001, so no tunnel container runs inside this stack.
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  backend:
+    driver: overlay
+    attachable: true
+
+secrets:
+  payload_secret:
+    external: true
+  database_url:
+    external: true
+  google_client_id:
+    external: true
+  google_client_secret:
+    external: true
+  mistral_api_key:
+    external: true
