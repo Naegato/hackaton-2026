@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { DocumentExampleButton } from '@/components/document-example-button';
+import { ImageSourceSheet } from '@/components/ImageSourceSheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/Button';
@@ -13,11 +14,13 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/auth-context';
 import { useLocale } from '@/context/locale-context';
 import {
+  ApiError,
   createSubscription,
   findMySubscription,
   getRecommendation,
   listSubscriptionDocuments,
   uploadSubscriptionDocument,
+  verifyPhoto,
   type DocStatus,
   type DocType,
   type RecommendationResult,
@@ -28,6 +31,7 @@ import { requiredDocumentTypes } from '@/lib/plan-eligibility';
 
 type Plan = RecommendationResult['plans'][number];
 type LocalAsset = { uri: string; name: string; mimeType: string };
+type PhotoVerifyStatus = 'idle' | 'checking' | 'human' | 'not-human' | 'error';
 
 const STATUS_COLOR: Record<DocStatus, string> = {
   pending: Colors.warning,
@@ -35,17 +39,40 @@ const STATUS_COLOR: Record<DocStatus, string> = {
   refused: Colors.danger,
 };
 
-async function pickImage(): Promise<LocalAsset | null> {
+const MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'] as const;
+type AllowedMimeType = (typeof MIME_TYPES)[number];
+
+function toAllowedMimeType(mimeType: string | undefined): AllowedMimeType {
+  return (MIME_TYPES as readonly string[]).includes(mimeType ?? '')
+    ? (mimeType as AllowedMimeType)
+    : 'image/jpeg';
+}
+
+function assetFromResult(res: ImagePicker.ImagePickerResult): LocalAsset | null {
+  if (res.canceled || !res.assets[0]) return null;
+  const a = res.assets[0];
+  const ext = (a.mimeType ?? 'image/jpeg').split('/')[1] ?? 'jpg';
+  return { uri: a.uri, name: a.fileName ?? `document.${ext}`, mimeType: a.mimeType ?? 'image/jpeg' };
+}
+
+async function pickImage(
+  source: 'library' | 'camera',
+  options: { base64?: boolean } = {},
+): Promise<ImagePicker.ImagePickerResult | null> {
+  if (source === 'camera') {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission', "Autorisez l'accès à la caméra pour ajouter un document.");
+      return null;
+    }
+    return ImagePicker.launchCameraAsync({ quality: 0.7, ...options });
+  }
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) {
     Alert.alert('Permission', "Autorisez l'accès aux photos pour ajouter un document.");
     return null;
   }
-  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-  if (res.canceled || !res.assets[0]) return null;
-  const a = res.assets[0];
-  const ext = (a.mimeType ?? 'image/jpeg').split('/')[1] ?? 'jpg';
-  return { uri: a.uri, name: a.fileName ?? `document.${ext}`, mimeType: a.mimeType ?? 'image/jpeg' };
+  return ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7, ...options });
 }
 
 export default function SubscribeScreen() {
@@ -60,10 +87,15 @@ export default function SubscribeScreen() {
   const [serverDocs, setServerDocs] = useState<Record<string, SubscriptionDoc>>({});
   const [localAssets, setLocalAssets] = useState<Record<string, LocalAsset>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [photoVerify, setPhotoVerify] = useState<{ status: PhotoVerifyStatus; message: string | null }>({
+    status: 'idle',
+    message: null,
+  });
   // Pour qui ? « moi » (nom du compte) ou « un proche » (nom saisi → apparaît dans « pour mes proches »)
   const [forWhom, setForWhom] = useState<'me' | 'relative'>('me');
   const [relFirst, setRelFirst] = useState('');
   const [relLast, setRelLast] = useState('');
+  const [sourceSheetFor, setSourceSheetFor] = useState<DocType | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -89,8 +121,45 @@ export default function SubscribeScreen() {
     }, [load]),
   );
 
-  async function addDocument(type: DocType) {
-    const asset = await pickImage();
+  function addDocument(type: DocType) {
+    setSourceSheetFor(type);
+  }
+
+  async function handleSourceSelected(source: 'library' | 'camera') {
+    const type = sourceSheetFor;
+    setSourceSheetFor(null);
+    if (!type) return;
+
+    // La photo d'identité passe par une vérification (Claude Vision) qu'il s'agit bien d'un visage humain
+    // avant d'être acceptée comme document de souscription.
+    if (type === 'photo') {
+      setPhotoVerify({ status: 'checking', message: null });
+      const result = await pickImage(source, { base64: true });
+      const asset = result ? assetFromResult(result) : null;
+      if (!result || result.canceled || !asset) {
+        setPhotoVerify({ status: 'idle', message: null });
+        return;
+      }
+      const base64 = result.assets?.[0]?.base64;
+      if (!base64) {
+        setPhotoVerify({ status: 'error', message: t('subscribe.photo.readError') });
+        return;
+      }
+      try {
+        const res = await verifyPhoto(base64, toAllowedMimeType(asset.mimeType));
+        setPhotoVerify({ status: res.isHuman ? 'human' : 'not-human', message: res.message });
+        if (res.isHuman) setLocalAssets((prev) => ({ ...prev, [type]: asset }));
+      } catch (err) {
+        setPhotoVerify({
+          status: 'error',
+          message: err instanceof ApiError ? err.message : t('subscribe.photo.verifyError'),
+        });
+      }
+      return;
+    }
+
+    const result = await pickImage(source);
+    const asset = result ? assetFromResult(result) : null;
     if (asset) setLocalAssets((prev) => ({ ...prev, [type]: asset }));
   }
 
@@ -119,6 +188,7 @@ export default function SubscribeScreen() {
       const docs = await listSubscriptionDocuments(subId);
       setServerDocs(Object.fromEntries(docs.map((d) => [d.type, d])));
       setLocalAssets({});
+      setPhotoVerify({ status: 'idle', message: null });
       Alert.alert(t('subscribe.successTitle'), t('subscribe.successBody'));
     } catch (e) {
       Alert.alert(t('subscribe.errorTitle'), e instanceof Error ? e.message : t('offers.loadError'));
@@ -255,6 +325,17 @@ export default function SubscribeScreen() {
                 <ThemedText style={styles.refusal}>{doc.refusalReason}</ThemedText>
               ) : null}
 
+              {/* Vérification "visage humain" (photo d'identité uniquement) */}
+              {type === 'photo' && photoVerify.status === 'checking' ? (
+                <ThemedText style={styles.statusChecking}>{t('subscribe.photo.checking')}</ThemedText>
+              ) : null}
+              {type === 'photo' && photoVerify.status === 'not-human' ? (
+                <ThemedText style={styles.refusal}>✕ {photoVerify.message}</ThemedText>
+              ) : null}
+              {type === 'photo' && photoVerify.status === 'error' ? (
+                <ThemedText style={styles.refusal}>⚠ {photoVerify.message}</ThemedText>
+              ) : null}
+
               {/* Action : ajouter / remplacer (sauf si validé) */}
               {!validated ? (
                 <Button
@@ -284,6 +365,13 @@ export default function SubscribeScreen() {
           style={styles.cta}
         />
       </View>
+
+      <ImageSourceSheet
+        visible={sourceSheetFor !== null}
+        title={t('subscribe.photo.sourceTitle')}
+        onSelect={handleSourceSelected}
+        onClose={() => setSourceSheetFor(null)}
+      />
     </ThemedView>
   );
 }
@@ -312,6 +400,7 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   statusText: { fontSize: 13, fontWeight: '600' },
+  statusChecking: { fontSize: 13, color: Colors.textSecondary, fontStyle: 'italic' },
   refusal: { fontSize: 13, color: Colors.danger, backgroundColor: Colors.dangerLight, borderRadius: 8, padding: 10 },
   addBtn: { alignSelf: 'flex-start', marginTop: 4 },
   note: { fontSize: 13, opacity: 0.6 },

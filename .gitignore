@@ -34,6 +34,10 @@ dist
 .expo/
 expo-env.d.ts
 
+# Payload CMS upload dirs (généré au runtime : seed, uploads usagers — jamais à committer)
+apps/content/media/
+apps/content/subscription-documents/
+
 # Debug
 npm-debug.log*
 yarn-debug.log*

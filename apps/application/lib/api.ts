@@ -338,9 +338,78 @@ export async function getSubscriptionHolder(
   };
 }
 
+export type SubscriptionDetail = {
+  id: string;
+  status: string;
+  cardNumber?: string | null;
+  holderFirstName?: string | null;
+  holderLastName?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  plan:
+    | { id: string; name: string; period?: string | null; zones?: string | null; price?: number | null; eligibility?: PlanEligibility }
+    | null;
+};
+
+/** Lit le détail complet d'un abonnement (offre peuplée, dates, titulaire) pour l'écran de détail. */
+export async function getSubscriptionDetail(id: string): Promise<SubscriptionDetail> {
+  const d = await request<{
+    id: string;
+    status: string;
+    cardNumber?: string | null;
+    holderFirstName?: string | null;
+    holderLastName?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    plan?:
+      | { id?: string; name?: string; period?: string; zones?: string; price?: number; eligibility?: PlanEligibility }
+      | string
+      | null;
+  }>(`/api/subscriptions/${id}?depth=1`, { method: 'GET' }, true);
+  const plan = d.plan && typeof d.plan === 'object' ? d.plan : null;
+  return {
+    id: d.id,
+    status: d.status,
+    cardNumber: d.cardNumber ?? null,
+    holderFirstName: d.holderFirstName ?? null,
+    holderLastName: d.holderLastName ?? null,
+    startDate: d.startDate ?? null,
+    endDate: d.endDate ?? null,
+    plan: plan
+      ? {
+          id: plan.id ?? '',
+          name: plan.name ?? '',
+          period: plan.period ?? null,
+          zones: plan.zones ?? null,
+          price: plan.price ?? null,
+          eligibility: plan.eligibility ?? null,
+        }
+      : null,
+  };
+}
+
 /** Résilie un abonnement (le gestionnaire courant). Le statut passe à « résilié » → l'abonnement bascule dans l'historique. */
 export function cancelSubscription(id: string): Promise<unknown> {
   return request(`/api/subscriptions/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'cancelled' }) }, true);
+}
+
+/** Confirme le paiement (fictif) d'un abonnement « prêt à payer » : passe le statut à « actif » avec les dates de validité. */
+export function payForSubscription(id: string): Promise<unknown> {
+  const startDate = new Date();
+  const endDate = new Date(startDate);
+  endDate.setFullYear(endDate.getFullYear() + 1);
+  return request(
+    `/api/subscriptions/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status: 'active',
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      }),
+    },
+    true,
+  );
 }
 
 /** Met à jour les informations du titulaire d'un abonnement (par le gestionnaire courant). */

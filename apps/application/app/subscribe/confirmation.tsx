@@ -14,7 +14,7 @@ import { ApiError, createSubscription } from '@/lib/api';
 export default function SubscribeConfirmationScreen() {
   const { t } = useLocale();
   const router = useRouter();
-  const params = useLocalSearchParams<{ planId?: string; planName?: string }>();
+  const params = useLocalSearchParams<{ planId?: string; planName?: string; subscriptionId?: string }>();
 
   const [creating, setCreating] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +22,11 @@ export default function SubscribeConfirmationScreen() {
   useEffect(() => {
     let active = true;
     (async () => {
+      // Paiement d'un abonnement existant (déjà créé, documents validés) : pas de nouvelle souscription à créer.
+      if (params.subscriptionId) {
+        setCreating(false);
+        return;
+      }
       if (!params.planId) {
         setError(t('subscribe.confirmation.error'));
         setCreating(false);
