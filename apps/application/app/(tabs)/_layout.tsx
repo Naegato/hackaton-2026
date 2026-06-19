@@ -6,12 +6,19 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { AssistantFab } from '@/components/assistant/AssistantFab';
+import { AssistantSheet } from '@/components/assistant/AssistantSheet';
+import { useAccessibilityMode } from '@/context/accessibility-context';
 import { useLocale } from '@/context/locale-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { t } = useLocale();
+  const { screenReaderEnabled } = useAccessibilityMode();
+
+  if (screenReaderEnabled) {
+    return <AssistantSheet visible fullScreen onClose={() => {}} />;
+  }
 
   return (
     <View style={styles.flex}>
